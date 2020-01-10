@@ -56,7 +56,7 @@ static NSString * const kEXPublicKeyFilename = @"manifestPublicKey.pem";
     configuration.requestCachePolicy = NSURLRequestReloadIgnoringCacheData;
     EXUpdatesFileDownloader *fileDownloader = [[EXUpdatesFileDownloader alloc] initWithURLSessionConfiguration:configuration];
     [fileDownloader downloadFileFromURL:[NSURL URLWithString:kEXPublicKeyUrl]
-                                 toPath:[cachedPublicKeyUrl absoluteString]
+                                 toPath:[cachedPublicKeyUrl path]
                            successBlock:^(NSData * _Nonnull publicKeyData, NSURLResponse * _Nonnull response) {
                                           [[self class] verifyWithPublicKey:publicKeyData signature:signature signedString:data callback:successBlock];
                                         }

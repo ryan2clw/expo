@@ -47,10 +47,17 @@ NSTimeInterval const kEXUpdatesDefaultTimeoutInterval = 60;
                  errorBlock:(EXUpdatesFileDownloaderErrorBlock)errorBlock
 {
   [self downloadDataFromURL:url successBlock:^(NSData *data, NSURLResponse *response) {
-    if ([NSFileManager.defaultManager createFileAtPath:destinationPath contents:data attributes:nil]) {
+    NSError *error;
+    if ([data writeToFile:destinationPath options:NSDataWritingAtomic error:&error]) {
       successBlock(data, response);
     } else {
-      errorBlock([NSError errorWithDomain:kEXUpdatesFileDownloaderErrorDomain code:-1 userInfo:@{NSLocalizedDescriptionKey: [NSString stringWithFormat:@"Could not write to path: %@", destinationPath]}], response);
+      errorBlock([NSError errorWithDomain:kEXUpdatesFileDownloaderErrorDomain
+                                     code:-1
+                                 userInfo:@{
+                                   NSLocalizedDescriptionKey: [NSString stringWithFormat:@"Could not write to path %@: %@", destinationPath, error.localizedDescription],
+                                   NSUnderlyingErrorKey: error
+                                 }
+                  ], response);
     }
   } errorBlock:errorBlock];
 }
