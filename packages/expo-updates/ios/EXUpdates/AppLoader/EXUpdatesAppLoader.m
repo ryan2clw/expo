@@ -61,7 +61,7 @@ static NSString * const kEXUpdatesAppLoaderErrorDomain = @"EXUpdatesAppLoader";
 - (void)startLoadingFromManifest:(EXUpdatesUpdate *)updateManifest
 {
   if (_delegate) {
-    BOOL shouldContinue = [_delegate appLoader:self shouldStartLoadingUpdate:_updateManifest];
+    BOOL shouldContinue = [_delegate appLoader:self shouldStartLoadingUpdate:updateManifest];
     if (!shouldContinue) {
       [_delegate appLoader:self didFinishLoadingUpdate:nil];
       return;
@@ -145,7 +145,7 @@ static NSString * const kEXUpdatesAppLoaderErrorDomain = @"EXUpdatesAppLoader";
       // the database and filesystem have gotten out of sync
       // do our best to create a new entry for this file even though it already existed on disk
       existingAsset.downloadTime = [NSDate date];
-      existingAsset.data = [NSData dataWithContentsOfURL:[[EXUpdatesAppController sharedInstance].updatesDirectory URLByAppendingPathComponent:existingAsset.filename]];
+      existingAsset.data = [NSData dataWithContentsOfURL:[[EXUpdatesAppController sharedInstance].updatesDirectory URLByAppendingPathComponent:existingAsset.filenameWithExtension]];
       [_finishedAssets addObject:existingAsset];
     }
   }

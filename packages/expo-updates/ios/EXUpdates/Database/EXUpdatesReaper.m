@@ -32,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
   for (NSDictionary *asset in assetsForDeletion) {
     NSAssert([@(1) isEqualToNumber:asset[@"marked_for_deletion"]], @"asset should be marked for deletion");
     NSNumber *assetId = asset[@"id"];
-    NSString *relativePath = asset[@"relativePath"];
+    NSString *relativePath = asset[@"relative_path"];
     NSAssert([assetId isKindOfClass:[NSNumber class]], @"asset id should be a nonnull number");
     NSAssert([relativePath isKindOfClass:[NSString class]], @"relative_path should be a nonnull string");
 
@@ -51,7 +51,7 @@ NS_ASSUME_NONNULL_BEGIN
   // retry errored deletions
   for (NSDictionary *asset in erroredAssets) {
     NSNumber *assetId = asset[@"id"];
-    NSString *relativePath = asset[@"relativePath"];
+    NSString *relativePath = asset[@"relative_path"];
 
     NSURL *fileUrl = [updatesDirectory URLByAppendingPathComponent:relativePath];
     NSError *err;

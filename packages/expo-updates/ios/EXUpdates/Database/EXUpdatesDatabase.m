@@ -527,7 +527,7 @@ static NSString * const kEXUpdatesDatabaseFilename = @"updates.db";
   id metadata = [NSJSONSerialization JSONObjectWithData:[(NSString *)row[@"metadata"] dataUsingEncoding:NSUTF8StringEncoding] options:kNilOptions error:&error];
   NSAssert(!error && metadata && [metadata isKindOfClass:[NSDictionary class]], @"Update metadata should be a valid JSON object");
   EXUpdatesUpdate *update = [EXUpdatesUpdate updateWithId:row[@"id"]
-                                               commitTime:[NSDate dateWithTimeIntervalSince1970:[(NSNumber *)row[@"commitTime"] doubleValue] / 1000]
+                                               commitTime:[NSDate dateWithTimeIntervalSince1970:[(NSNumber *)row[@"commit_time"] doubleValue] / 1000]
                                            binaryVersions:row[@"binary_versions"]
                                                  metadata:metadata
                                                    status:(EXUpdatesUpdateStatus)[(NSNumber *)row[@"status"] integerValue]

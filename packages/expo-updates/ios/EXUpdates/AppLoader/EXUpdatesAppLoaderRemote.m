@@ -47,7 +47,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)downloadAsset:(EXUpdatesAsset *)asset
 {
   NSURL *updatesDirectory = [EXUpdatesAppController sharedInstance].updatesDirectory;
-  NSURL *urlOnDisk = [updatesDirectory URLByAppendingPathComponent:asset.filename];
+  NSURL *urlOnDisk = [updatesDirectory URLByAppendingPathComponent:asset.filenameWithExtension];
   if ([[NSFileManager defaultManager] fileExistsAtPath:[urlOnDisk path]]) {
     // file already exists, we don't need to download it again
     [self handleAssetDownloadAlreadyExists:asset];

@@ -60,7 +60,7 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
   if (_launchedUpdate) {
     for (EXUpdatesAsset *asset in _launchedUpdate.assets) {
       if ([self ensureAssetExists:asset]) {
-        NSURL *assetLocalUrl = [updatesDirectory URLByAppendingPathComponent:asset.filename];
+        NSURL *assetLocalUrl = [updatesDirectory URLByAppendingPathComponent:asset.filenameWithExtension];
         if (asset.isLaunchAsset) {
           _launchAssetUrl = assetLocalUrl;
         } else {
@@ -78,7 +78,7 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
 
 - (BOOL)ensureAssetExists:(EXUpdatesAsset *)asset
 {
-  NSURL *assetLocalUrl = [[EXUpdatesAppController sharedInstance].updatesDirectory URLByAppendingPathComponent:asset.filename];
+  NSURL *assetLocalUrl = [[EXUpdatesAppController sharedInstance].updatesDirectory URLByAppendingPathComponent:asset.filenameWithExtension];
   BOOL assetFileExists = [[NSFileManager defaultManager] fileExistsAtPath:[assetLocalUrl path]];
   if (!assetFileExists) {
     // something has gone wrong, we're missing the asset
