@@ -22,7 +22,6 @@
 /**
  * properties EXUpdatesAsset can derive on its own
  */
-@property (nonatomic, readonly) NSString * _Nullable filenameWithExtension;
 @property (nonatomic, readonly) NSString * _Nullable contentHash;
 @property (nonatomic, readonly) NSDictionary * _Nullable headers;
 

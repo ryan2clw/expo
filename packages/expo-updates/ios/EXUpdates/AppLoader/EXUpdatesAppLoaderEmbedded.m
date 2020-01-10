@@ -42,7 +42,7 @@ static NSString * const kEXUpdatesEmbeddedManifestType = @"json";
 - (void)downloadAsset:(EXUpdatesAsset *)asset
 {
   NSURL *updatesDirectory = [EXUpdatesAppController sharedInstance].updatesDirectory;
-  NSURL *destinationUrl = [updatesDirectory URLByAppendingPathComponent:asset.filenameWithExtension];
+  NSURL *destinationUrl = [updatesDirectory URLByAppendingPathComponent:asset.filename];
   if ([[NSFileManager defaultManager] fileExistsAtPath:[destinationUrl path]]) {
     [self handleAssetDownloadAlreadyExists:asset];
   } else {

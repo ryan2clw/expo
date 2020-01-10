@@ -9,6 +9,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 static NSString * const kEXUpdatesEmbeddedBundleFilename = @"shell-app";
+static NSString * const kEXUpdatesEmbeddedBundleFileType = @"bundle";
 
 @interface EXUpdatesUpdate ()
 
@@ -77,10 +78,12 @@ binaryVersions:(NSString *)binaryVersions
   NSAssert(bundleUrl, @"bundleUrl should be a valid URL");
 
   NSMutableArray<EXUpdatesAsset *>*processedAssets = [NSMutableArray new];
-  EXUpdatesAsset *jsBundleAsset = [[EXUpdatesAsset alloc] initWithUrl:bundleUrl type:@"bundle"];
+  EXUpdatesAsset *jsBundleAsset = [[EXUpdatesAsset alloc] initWithUrl:bundleUrl type:kEXUpdatesEmbeddedBundleFileType];
   jsBundleAsset.isLaunchAsset = YES;
   jsBundleAsset.nsBundleFilename = kEXUpdatesEmbeddedBundleFilename;
-  jsBundleAsset.filename = [EXUpdatesUtils sha1WithData:[[bundleUrl absoluteString] dataUsingEncoding:NSUTF8StringEncoding]];
+  jsBundleAsset.filename = [NSString stringWithFormat:@"%@.%@",
+                              [EXUpdatesUtils sha1WithData:[[bundleUrl absoluteString] dataUsingEncoding:NSUTF8StringEncoding]],
+                              kEXUpdatesEmbeddedBundleFileType];
   [processedAssets addObject:jsBundleAsset];
 
   for (NSDictionary *assetDict in (NSArray *)assets) {
@@ -106,7 +109,9 @@ binaryVersions:(NSString *)binaryVersions
       asset.nsBundleFilename = (NSString *)nsBundleFilename;
     }
 
-    asset.filename = [EXUpdatesUtils sha1WithData:[(NSString *)urlString dataUsingEncoding:NSUTF8StringEncoding]];
+    asset.filename = [NSString stringWithFormat:@"%@.%@",
+                        [EXUpdatesUtils sha1WithData:[(NSString *)urlString dataUsingEncoding:NSUTF8StringEncoding]],
+                        type];
 
     [processedAssets addObject:asset];
   }
@@ -158,10 +163,12 @@ binaryVersions:(NSString *)binaryVersions
   NSAssert(bundleUrl, @"bundleUrl should be a valid URL");
 
   NSMutableArray<EXUpdatesAsset *>*processedAssets = [NSMutableArray new];
-  EXUpdatesAsset *jsBundleAsset = [[EXUpdatesAsset alloc] initWithUrl:bundleUrl type:@"bundle"];
+  EXUpdatesAsset *jsBundleAsset = [[EXUpdatesAsset alloc] initWithUrl:bundleUrl type:kEXUpdatesEmbeddedBundleFileType];
   jsBundleAsset.isLaunchAsset = YES;
   jsBundleAsset.nsBundleFilename = kEXUpdatesEmbeddedBundleFilename;
-  jsBundleAsset.filename = [EXUpdatesUtils sha1WithData:[[bundleUrl absoluteString] dataUsingEncoding:NSUTF8StringEncoding]];
+  jsBundleAsset.filename = [NSString stringWithFormat:@"%@.%@",
+                              [EXUpdatesUtils sha1WithData:[[bundleUrl absoluteString] dataUsingEncoding:NSUTF8StringEncoding]],
+                              kEXUpdatesEmbeddedBundleFileType];
   [processedAssets addObject:jsBundleAsset];
 
   for (NSString *bundledAsset in (NSArray *)assets) {
@@ -188,7 +195,9 @@ binaryVersions:(NSString *)binaryVersions
     EXUpdatesAsset *asset = [[EXUpdatesAsset alloc] initWithUrl:url type:(NSString *)type];
     asset.nsBundleFilename = filename;
 
-    asset.filename = [EXUpdatesUtils sha1WithData:[[url absoluteString] dataUsingEncoding:NSUTF8StringEncoding]];
+    asset.filename = [NSString stringWithFormat:@"%@.%@",
+                        [EXUpdatesUtils sha1WithData:[[url absoluteString] dataUsingEncoding:NSUTF8StringEncoding]],
+                        type];
 
     [processedAssets addObject:asset];
   }

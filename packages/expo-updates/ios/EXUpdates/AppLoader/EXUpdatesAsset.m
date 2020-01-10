@@ -5,7 +5,6 @@
 
 @interface EXUpdatesAsset ()
 
-@property (nonatomic, readwrite, strong) NSString * _Nullable filenameWithExtension;
 @property (nonatomic, readwrite, strong) NSString * _Nullable contentHash;
 @property (nonatomic, readwrite, strong) NSDictionary * _Nullable headers;
 
@@ -20,16 +19,6 @@
     _type = type;
   }
   return self;
-}
-
-- (NSString *)filenameWithExtension
-{
-  if (!_filenameWithExtension) {
-    if (_filename) {
-      _filenameWithExtension = [NSString stringWithFormat:@"%@.%@", _filename, _type];
-    }
-  }
-  return _filenameWithExtension;
 }
 
 - (NSString *)contentHash {
