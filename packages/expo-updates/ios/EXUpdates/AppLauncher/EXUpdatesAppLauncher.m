@@ -11,7 +11,6 @@ NS_ASSUME_NONNULL_BEGIN
 @interface EXUpdatesAppLauncher ()
 
 @property (nonatomic, strong, readwrite) EXUpdatesUpdate * _Nullable launchedUpdate;
-@property (nonatomic, strong, readwrite) EXUpdatesUpdate * _Nullable launchableUpdate;
 @property (nonatomic, strong, readwrite) NSURL * _Nullable launchAssetUrl;
 @property (nonatomic, strong, readwrite) NSMutableDictionary * _Nullable assetFilesMap;
 
@@ -39,12 +38,9 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
 
 - (EXUpdatesUpdate * _Nullable)launchableUpdateWithSelectionPolicy:(id<EXUpdatesSelectionPolicy>)selectionPolicy
 {
-  if (!_launchableUpdate) {
-    EXUpdatesDatabase *database = [EXUpdatesAppController sharedInstance].database;
-    NSArray<EXUpdatesUpdate *>* launchableUpdates = [database launchableUpdates];
-    _launchableUpdate = [selectionPolicy launchableUpdateWithUpdates:launchableUpdates];
-  }
-  return _launchableUpdate;
+  EXUpdatesDatabase *database = [EXUpdatesAppController sharedInstance].database;
+  NSArray<EXUpdatesUpdate *>* launchableUpdates = [database launchableUpdates];
+  return [selectionPolicy launchableUpdateWithUpdates:launchableUpdates];
 }
 
 - (void)launchUpdateWithSelectionPolicy:(id<EXUpdatesSelectionPolicy>)selectionPolicy
