@@ -27,10 +27,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong) EXMenuViewController *menuViewController;
 @property (nonatomic, assign) BOOL isMenuVisible;
-@property (nonatomic, assign) BOOL isAnimatingMenu;
 @property (nonatomic, assign) BOOL isAnimatingAppTransition;
 @property (nonatomic, strong) EXButtonView *btnMenu;
 @property (nonatomic, strong, nullable) EXMenuWindow *menuWindow;
+@property (nonatomic, strong, nullable) NSNumber *orientationBeforeShowingMenu;
 
 @end
 
@@ -65,6 +65,14 @@ NS_ASSUME_NONNULL_BEGIN
   _btnMenu.frame = CGRectMake(0, 0, 48.0f, 48.0f);
   _btnMenu.center = CGPointMake(self.view.frame.size.width - 36.0f, self.view.frame.size.height - 72.0f);
   [self.view bringSubviewToFront:_btnMenu];
+}
+
+- (UIInterfaceOrientationMask)supportedInterfaceOrientations
+{
+  if (_isMenuVisible) {
+    return [_menuViewController supportedInterfaceOrientations];
+  }
+  return [[EXKernel sharedInstance].visibleApp.viewController supportedInterfaceOrientations];
 }
 
 #pragma mark - EXViewController
@@ -102,13 +110,39 @@ NS_ASSUME_NONNULL_BEGIN
     _menuViewController = [[EXMenuViewController alloc] init];
   }
   if (isMenuVisible != _isMenuVisible) {
-    if (!_isAnimatingMenu) {
-      _isMenuVisible = isMenuVisible;
-      [self _animateMenuToVisible:_isMenuVisible completion:completion];
+    _isMenuVisible = isMenuVisible;
+
+    if (isMenuVisible) {
+      // Add menu view controller as a child of the root view controller.
+      [_menuViewController willMoveToParentViewController:self];
+      [_menuViewController.view setFrame:self.view.frame];
+      [self.view addSubview:_menuViewController.view];
+      [_menuViewController didMoveToParentViewController:self];
+
+      // We need to force the device to use portrait orientation as it doesn't support landscape.
+      // However, when removing it, we should set it back to the orientation from before showing the dev menu.
+      _orientationBeforeShowingMenu = [[UIDevice currentDevice] valueForKey:@"orientation"];
+      [[UIDevice currentDevice] setValue:@(UIInterfaceOrientationPortrait) forKey:@"orientation"];
+    } else {
+      // Detach menu view controller from the root view controller.
+      [_menuViewController willMoveToParentViewController:nil];
+      [_menuViewController.view removeFromSuperview];
+      [_menuViewController didMoveToParentViewController:nil];
+
+      // Restore the original orientation that had been set before the dev menu was displayed.
+      [[UIDevice currentDevice] setValue:_orientationBeforeShowingMenu forKey:@"orientation"];
     }
-  } else {
+    // Ask the system to rotate the UI to device orientation that we've just set to fake value (see previous line of code).
+    [UIViewController attemptRotationToDeviceOrientation];
+  }
+  if (completion) {
     completion();
   }
+}
+
+- (BOOL)isMenuVisible
+{
+  return _isMenuVisible;
 }
 
 - (void)showQRReader
@@ -255,56 +289,6 @@ NS_ASSUME_NONNULL_BEGIN
     } else {
       transitionFinished();
     }
-  }
-}
-
-- (void)_animateMenuToVisible:(BOOL)visible completion:(void (^ _Nullable)(void))completion
-{
-  _isAnimatingMenu = YES;
-  __weak typeof(self) weakSelf = self;
-  if (visible) {
-    [_menuViewController willMoveToParentViewController:self];
-    
-    if (_menuWindow == nil) {
-      _menuWindow = [[EXMenuWindow alloc] init];
-    }
-    
-    [_menuWindow setFrame:self.view.frame];
-    [_menuWindow addSubview:_menuViewController.view];
-    [_menuWindow makeKeyAndVisible];
-    
-    _menuViewController.view.alpha = 0.0f;
-    _menuViewController.view.transform = CGAffineTransformMakeScale(1.1f, 1.1f);
-    [UIView animateWithDuration:0.1f animations:^{
-      self.menuViewController.view.alpha = 1.0f;
-      self.menuViewController.view.transform = CGAffineTransformIdentity;
-    } completion:^(BOOL finished) {
-      __strong typeof(weakSelf) strongSelf = weakSelf;
-      if (strongSelf) {
-        strongSelf.isAnimatingMenu = NO;
-        [strongSelf.menuViewController didMoveToParentViewController:self];
-        if (completion) {
-          completion();
-        }
-      }
-    }];
-  } else {
-    _menuViewController.view.alpha = 1.0f;
-    [UIView animateWithDuration:0.1f animations:^{
-      self.menuViewController.view.alpha = 0.0f;
-    } completion:^(BOOL finished) {
-      __strong typeof(weakSelf) strongSelf = weakSelf;
-      if (strongSelf) {
-        strongSelf.isAnimatingMenu = NO;
-        [strongSelf.menuViewController willMoveToParentViewController:nil];
-        [strongSelf.menuViewController.view removeFromSuperview];
-        [strongSelf.menuViewController didMoveToParentViewController:nil];
-        strongSelf.menuWindow = nil;
-        if (completion) {
-          completion();
-        }
-      }
-    }];
   }
 }
 

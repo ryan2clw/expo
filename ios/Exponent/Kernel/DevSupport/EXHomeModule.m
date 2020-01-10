@@ -79,6 +79,22 @@
 }
 
 /**
+ * Requests JavaScript side to start closing the dev menu (start the animation or so).
+ * Fully closes the dev menu once it receives a response from that event.
+ */
+- (void)requestToCloseDevMenu
+{
+  __weak typeof(self) weakSelf = self;
+  void (^close)(id) = ^(id arg){
+    __strong typeof(weakSelf) strongSelf = weakSelf;
+    if (strongSelf->_delegate) {
+      [strongSelf->_delegate homeModuleDidSelectCloseMenu:strongSelf];
+    }
+  };
+  [self dispatchJSEvent:@"requestToCloseDevMenu" body:nil onSuccess:close onFailure:close];
+}
+
+/**
  *  Duplicates Linking.openURL but does not validate that this is an exponent URL;
  *  in other words, we just take your word for it and never hand it off to iOS.
  *  Used by the home screen URL bar.
@@ -126,7 +142,7 @@ RCT_EXPORT_METHOD(setIsLegacyMenuBehaviorEnabledAsync:(BOOL)isEnabled)
   }
 }
 
-RCT_REMAP_METHOD(getDevMenuItemsToShow,
+RCT_REMAP_METHOD(getDevMenuItemsToShowAsync,
                  getDevMenuItemsToShowWithResolver:(RCTPromiseResolveBlock)resolve
                  reject:(RCTPromiseRejectBlock)reject)
 {
@@ -138,28 +154,28 @@ RCT_REMAP_METHOD(getDevMenuItemsToShow,
   }
 }
 
-RCT_EXPORT_METHOD(selectDevMenuItemWithKey:(NSString *)key)
+RCT_EXPORT_METHOD(selectDevMenuItemWithKeyAsync:(NSString *)key)
 {
   if (_delegate) {
     [_delegate homeModule:self didSelectDevMenuItemWithKey:key];
   }
 }
 
-RCT_EXPORT_METHOD(selectRefresh)
+RCT_EXPORT_METHOD(reloadAppAsync)
 {
   if (_delegate) {
     [_delegate homeModuleDidSelectRefresh:self];
   }
 }
 
-RCT_EXPORT_METHOD(selectCloseMenu)
+RCT_EXPORT_METHOD(closeDevMenuAsync)
 {
   if (_delegate) {
     [_delegate homeModuleDidSelectCloseMenu:self];
   }
 }
 
-RCT_EXPORT_METHOD(selectGoToHome)
+RCT_EXPORT_METHOD(goToHomeAsync)
 {
   if (_delegate) {
     [_delegate homeModuleDidSelectGoToHome:self];
@@ -208,8 +224,8 @@ RCT_REMAP_METHOD(removeSessionAsync,
   }
 }
 
-RCT_REMAP_METHOD(getIsNuxFinishedAsync,
-                 getIsNuxFinishedWithResolver:(RCTPromiseResolveBlock)resolve
+RCT_REMAP_METHOD(getIsOnboardingFinishedAsync,
+                 getIsOnboardingFinishedWithResolver:(RCTPromiseResolveBlock)resolve
                  rejecter:(RCTPromiseRejectBlock)reject)
 {
   if (_delegate) {
@@ -220,11 +236,11 @@ RCT_REMAP_METHOD(getIsNuxFinishedAsync,
   }
 }
 
-RCT_REMAP_METHOD(setIsNuxFinishedAsync,
-                 setIsNuxFinished:(BOOL)isNuxFinished)
+RCT_REMAP_METHOD(setIsOnboardingFinishedAsync,
+                 setIsOnboardingFinished:(BOOL)isOnboardingFinished)
 {
   if (_delegate) {
-    [_delegate homeModule:self didFinishNux:isNuxFinished];
+    [_delegate homeModule:self didFinishNux:isOnboardingFinished];
   }
 }
 

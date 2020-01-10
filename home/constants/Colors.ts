@@ -15,7 +15,7 @@ export default {
     sectionLabelText: '#a7aab0',
     bodyBackground: '#f8f8f9',
     cardBackground: '#fff',
-    cardSeparator: '#f4f4f5',
+    cardSeparator: '#ddd',
     cardTitle: '#242c39',
 
     tabIconDefault: '#bdbfc3',
