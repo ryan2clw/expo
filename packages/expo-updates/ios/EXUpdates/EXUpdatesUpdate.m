@@ -8,7 +8,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-static NSString * const kEXUpdatesEmbeddedBundleFilename = @"shell-app.bundle";
+static NSString * const kEXUpdatesEmbeddedBundleFilename = @"shell-app";
 
 @interface EXUpdatesUpdate ()
 
@@ -77,7 +77,7 @@ binaryVersions:(NSString *)binaryVersions
   NSAssert(bundleUrl, @"bundleUrl should be a valid URL");
 
   NSMutableArray<EXUpdatesAsset *>*processedAssets = [NSMutableArray new];
-  EXUpdatesAsset *jsBundleAsset = [[EXUpdatesAsset alloc] initWithUrl:bundleUrl type:@"js"];
+  EXUpdatesAsset *jsBundleAsset = [[EXUpdatesAsset alloc] initWithUrl:bundleUrl type:@"bundle"];
   jsBundleAsset.isLaunchAsset = YES;
   jsBundleAsset.nsBundleFilename = kEXUpdatesEmbeddedBundleFilename;
   jsBundleAsset.filename = [EXUpdatesUtils sha1WithData:[[bundleUrl absoluteString] dataUsingEncoding:NSUTF8StringEncoding]];
@@ -158,7 +158,7 @@ binaryVersions:(NSString *)binaryVersions
   NSAssert(bundleUrl, @"bundleUrl should be a valid URL");
 
   NSMutableArray<EXUpdatesAsset *>*processedAssets = [NSMutableArray new];
-  EXUpdatesAsset *jsBundleAsset = [[EXUpdatesAsset alloc] initWithUrl:bundleUrl type:@"js"];
+  EXUpdatesAsset *jsBundleAsset = [[EXUpdatesAsset alloc] initWithUrl:bundleUrl type:@"bundle"];
   jsBundleAsset.isLaunchAsset = YES;
   jsBundleAsset.nsBundleFilename = kEXUpdatesEmbeddedBundleFilename;
   jsBundleAsset.filename = [EXUpdatesUtils sha1WithData:[[bundleUrl absoluteString] dataUsingEncoding:NSUTF8StringEncoding]];
@@ -168,14 +168,17 @@ binaryVersions:(NSString *)binaryVersions
     NSAssert([bundledAsset isKindOfClass:[NSString class]], @"bundledAssets must be an array of strings");
 
     NSRange extensionStartRange = [bundledAsset rangeOfString:@"." options:NSBackwardsSearch];
-    int prefixLength = [@"asset_" length];
+    NSUInteger prefixLength = [@"asset_" length];
+    NSString *filename;
     NSString *hash;
     NSString *type;
     if (extensionStartRange.location == NSNotFound) {
+      filename = bundledAsset;
       hash = [bundledAsset substringFromIndex:prefixLength];
       type = @"";
     } else {
-      NSRange hashRange = NSMakeRange(prefixLength, extensionStartRange.location);
+      filename = [bundledAsset substringToIndex:extensionStartRange.location];
+      NSRange hashRange = NSMakeRange(prefixLength, extensionStartRange.location - prefixLength);
       hash = [bundledAsset substringWithRange:hashRange];
       type = [bundledAsset substringFromIndex:extensionStartRange.location + 1];
     }
@@ -183,7 +186,7 @@ binaryVersions:(NSString *)binaryVersions
     NSURL *url = [NSURL URLWithString:hash relativeToURL:[[self class] bundledAssetBaseUrl]];
 
     EXUpdatesAsset *asset = [[EXUpdatesAsset alloc] initWithUrl:url type:(NSString *)type];
-    asset.nsBundleFilename = (NSString *)bundledAsset;
+    asset.nsBundleFilename = filename;
 
     asset.filename = [EXUpdatesUtils sha1WithData:[[url absoluteString] dataUsingEncoding:NSUTF8StringEncoding]];
 

@@ -86,9 +86,9 @@ static NSString * const kEXUpdatesAppLoaderErrorDomain = @"EXUpdatesAppLoader";
       [database addUpdate:_updateManifest];
     }
 
-    _assetQueue = [_updateManifest.assets copy];
+    _assetQueue = [_updateManifest.assets mutableCopy];
 
-    for (EXUpdatesAsset *asset in _assetQueue) {
+    for (EXUpdatesAsset *asset in _updateManifest.assets) {
       [self downloadAsset:asset];
     }
   }
@@ -151,17 +151,19 @@ static NSString * const kEXUpdatesAppLoaderErrorDomain = @"EXUpdatesAppLoader";
   }
   [database addNewAssets:_finishedAssets toUpdateWithId:_updateManifest.updateId];
 
+  if (![_erroredAssets count]) {
+    [database markUpdateReadyWithId:_updateManifest.updateId];
+  }
+  [self _unlockDatabase];
+
   if (_delegate) {
     if ([_erroredAssets count]) {
-      [self _unlockDatabase];
       [_delegate appLoader:self didFailWithError:[NSError errorWithDomain:kEXUpdatesAppLoaderErrorDomain
                                                                      code:-1
                                                                  userInfo:@{
                                                                             NSLocalizedDescriptionKey: @"Failed to download all assets"
                                                                             }]];
     } else {
-      [database markUpdateReadyWithId:_updateManifest.updateId];
-      [self _unlockDatabase];
       [_delegate appLoader:self didFinishLoadingUpdate:_updateManifest];
     }
   }

@@ -166,7 +166,7 @@ static NSString * const kEXUpdatesDatabaseFilename = @"updates.db";
     NSAssert(asset.filename, @"asset filename should be nonnull");
     NSAssert(asset.contentHash, @"asset contentHash should be nonnull");
 
-    NSString * const assetInsertSql = @"INSERT OR REPLACE INTO \"assets\" (\"url\", \"headers\", \"type\", \"metadata\", \"download_time\", \"relative_path\", \"hash_content\", \"hash_type\", \"marked_for_deletion\")\
+    NSString * const assetInsertSql = @"INSERT OR REPLACE INTO \"assets\" (\"url\", \"headers\", \"type\", \"metadata\", \"download_time\", \"relative_path\", \"hash\", \"hash_type\", \"marked_for_deletion\")\
     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 0);";
     [self _executeSql:assetInsertSql
              withArgs:@[
@@ -201,7 +201,7 @@ static NSString * const kEXUpdatesDatabaseFilename = @"updates.db";
   
   NSString * const assetSelectSql = @"SELECT id FROM assets WHERE url = ?1 LIMIT 1;";
   NSArray<NSDictionary *>* rows = [self _executeSql:assetSelectSql withArgs:@[asset.url]];
-  if (!rows || !rows[0]) {
+  if (!rows || ![rows count]) {
     success = NO;
   } else {
     NSNumber *assetId = rows[0][@"id"];
@@ -336,7 +336,7 @@ static NSString * const kEXUpdatesDatabaseFilename = @"updates.db";
   WHERE updates.id = ?1;";
 
   NSArray<NSDictionary *>* rows = [self _executeSql:sql withArgs:@[updateId]];
-  if (!rows || !rows[0]) {
+  if (!rows || ![rows count]) {
     return nil;
   } else {
     return [self _updateWithRow:rows[0]];
@@ -358,7 +358,8 @@ static NSString * const kEXUpdatesDatabaseFilename = @"updates.db";
       NSLog(@"returned multiple updates with the same ID in launchAssetUrlWithUpdateId");
     }
     NSDictionary *row = rows[0];
-    EXUpdatesAsset *asset = [[EXUpdatesAsset alloc] initWithUrl:row[@"url"] type:row[@"type"]];
+    NSURL *url = [NSURL URLWithString:row[@"url"]];
+    EXUpdatesAsset *asset = [[EXUpdatesAsset alloc] initWithUrl:url type:row[@"type"]];
     asset.filename = row[@"relative_path"];
     asset.metadata = row[@"metadata"];
     asset.isLaunchAsset = YES;
@@ -368,7 +369,7 @@ static NSString * const kEXUpdatesDatabaseFilename = @"updates.db";
 
 - (NSArray<EXUpdatesAsset *>*)assetsWithUpdateId:(NSUUID *)updateId
 {
-  NSString * const sql = @"SELECT asset_id, url, type, relative_path, metadata, launch_asset_id\
+  NSString * const sql = @"SELECT asset_id, url, type, relative_path, assets.metadata, launch_asset_id\
   FROM assets\
   INNER JOIN updates_assets ON updates_assets.asset_id = assets.id\
   INNER JOIN updates ON updates_assets.update_id = updates.id\
@@ -379,7 +380,8 @@ static NSString * const kEXUpdatesDatabaseFilename = @"updates.db";
   NSMutableArray<EXUpdatesAsset *>*assets = [NSMutableArray arrayWithCapacity:rows.count];
 
   for (NSDictionary *row in rows) {
-    EXUpdatesAsset *asset = [[EXUpdatesAsset alloc] initWithUrl:row[@"url"] type:row[@"type"]];
+    NSURL *url = [NSURL URLWithString:row[@"url"]];
+    EXUpdatesAsset *asset = [[EXUpdatesAsset alloc] initWithUrl:url type:row[@"type"]];
     asset.filename = row[@"relative_path"];
     asset.metadata = row[@"metadata"];
     asset.isLaunchAsset = [(NSNumber *)row[@"launch_asset_id"] isEqualToNumber:(NSNumber *)row[@"asset_id"]];
@@ -526,7 +528,7 @@ static NSString * const kEXUpdatesDatabaseFilename = @"updates.db";
   NSAssert(!error && metadata && [metadata isKindOfClass:[NSDictionary class]], @"Update metadata should be a valid JSON object");
   EXUpdatesUpdate *update = [EXUpdatesUpdate updateWithId:row[@"id"]
                                                commitTime:[NSDate dateWithTimeIntervalSince1970:[(NSNumber *)row[@"commitTime"] doubleValue] / 1000]
-                                           binaryVersions:row[@"binaryVersions"]
+                                           binaryVersions:row[@"binary_versions"]
                                                  metadata:metadata
                                                    status:(EXUpdatesUpdateStatus)[(NSNumber *)row[@"status"] integerValue]
                                                      keep:[(NSNumber *)row[@"keep"] boolValue]];
