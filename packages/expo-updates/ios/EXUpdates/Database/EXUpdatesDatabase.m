@@ -446,8 +446,7 @@ static NSString * const kEXUpdatesDatabaseFilename = @"updates.db";
   sqlite3_finalize(stmt);
 
   if (errorMessage) {
-    // TODO: handle this
-    NSLog(@"Error executing SQLite statement: %@", [self _errorMessageFromSqlite:_db]);
+    NSAssert(NO, @"Error executing SQLite statement: %@", [self _errorMessageFromSqlite:_db]);
     return nil;
   }
 
@@ -480,28 +479,24 @@ static NSString * const kEXUpdatesDatabaseFilename = @"updates.db";
       uuid_t bytes;
       [((NSUUID *)obj) getUUIDBytes:bytes];
       if (sqlite3_bind_blob(stmt, (int)idx + 1, bytes, 16, SQLITE_TRANSIENT) != SQLITE_OK) {
-        // TODO: handle this
-        NSLog(@"Error executing SQLite statement: %@", [self _errorMessageFromSqlite:_db]);
+        NSAssert(NO, @"Error executing SQLite statement: %@", [self _errorMessageFromSqlite:_db]);
         *stop = YES;
       }
     } else if ([obj isKindOfClass:[NSNumber class]]) {
       if (sqlite3_bind_int64(stmt, (int)idx + 1, [((NSNumber *)obj) longLongValue]) != SQLITE_OK) {
-        // TODO: handle this
-        NSLog(@"Error executing SQLite statement: %@", [self _errorMessageFromSqlite:_db]);
+        NSAssert(NO, @"Error executing SQLite statement: %@", [self _errorMessageFromSqlite:_db]);
         *stop = YES;
       }
     } else if ([obj isKindOfClass:[NSDictionary class]]) {
       NSError *error;
       NSData *jsonData = [NSJSONSerialization dataWithJSONObject:(NSDictionary *)obj options:kNilOptions error:&error];
       if (!error && sqlite3_bind_text(stmt, (int)idx + 1, jsonData.bytes, (int)jsonData.length, SQLITE_TRANSIENT) != SQLITE_OK) {
-        // TODO: handle this
-        NSLog(@"Error executing SQLite statement: %@", [self _errorMessageFromSqlite:_db]);
+        NSAssert(NO, @"Error executing SQLite statement: %@", [self _errorMessageFromSqlite:_db]);
         *stop = YES;
       }
     } else if ([obj isKindOfClass:[NSNull class]]) {
       if (sqlite3_bind_null(stmt, (int)idx + 1) != SQLITE_OK) {
-        // TODO: handle this
-        NSLog(@"Error executing SQLite statement: %@", [self _errorMessageFromSqlite:_db]);
+        NSAssert(NO, @"Error executing SQLite statement: %@", [self _errorMessageFromSqlite:_db]);
         *stop = YES;
       }
     } else {
@@ -509,8 +504,7 @@ static NSString * const kEXUpdatesDatabaseFilename = @"updates.db";
       NSString *string = [obj isKindOfClass:[NSString class]] ? (NSString *)obj : [obj description];
       NSData *data = [string dataUsingEncoding:NSUTF8StringEncoding];
       if (sqlite3_bind_text(stmt, (int)idx + 1, data.bytes, (int)data.length, SQLITE_TRANSIENT) != SQLITE_OK) {
-        // TODO: handle this
-        NSLog(@"Error executing SQLite statement: %@", [self _errorMessageFromSqlite:_db]);
+        NSAssert(NO, @"Error executing SQLite statement: %@", [self _errorMessageFromSqlite:_db]);
         *stop = YES;
       }
     }
