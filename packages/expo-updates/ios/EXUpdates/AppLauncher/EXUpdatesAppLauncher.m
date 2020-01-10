@@ -60,7 +60,7 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
   if (_launchedUpdate) {
     for (EXUpdatesAsset *asset in _launchedUpdate.assets) {
       if ([self ensureAssetExists:asset]) {
-        NSURL *assetLocalUrl = [NSURL URLWithString:asset.filename relativeToURL:updatesDirectory];
+        NSURL *assetLocalUrl = [updatesDirectory URLByAppendingPathComponent:asset.filename];
         if (asset.isLaunchAsset) {
           _launchAssetUrl = assetLocalUrl;
         } else {
@@ -78,7 +78,7 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
 
 - (BOOL)ensureAssetExists:(EXUpdatesAsset *)asset
 {
-  NSURL *assetLocalUrl = [NSURL URLWithString:asset.filename relativeToURL:[EXUpdatesAppController sharedInstance].updatesDirectory];
+  NSURL *assetLocalUrl = [[EXUpdatesAppController sharedInstance].updatesDirectory URLByAppendingPathComponent:asset.filename];
   BOOL assetFileExists = [[NSFileManager defaultManager] fileExistsAtPath:[assetLocalUrl path]];
   if (!assetFileExists) {
     // something has gone wrong, we're missing the asset
@@ -93,10 +93,13 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
         }
       }
 
-      if (matchingAsset) {
-        NSString *bundlePath = [[NSBundle mainBundle] pathForResource:asset.nsBundleFilename ofType:asset.type];
-        if ([[NSFileManager defaultManager] copyItemAtPath:bundlePath toPath:[assetLocalUrl path] error:nil]) {
+      if (matchingAsset && matchingAsset.nsBundleFilename) {
+        NSString *bundlePath = [[NSBundle mainBundle] pathForResource:matchingAsset.nsBundleFilename ofType:matchingAsset.type];
+        NSError *error;
+        if ([[NSFileManager defaultManager] copyItemAtPath:bundlePath toPath:[assetLocalUrl path] error:&error]) {
           assetFileExists = YES;
+        } else {
+          NSLog(@"Error copying asset: %@", error.localizedDescription);
         }
       }
     }

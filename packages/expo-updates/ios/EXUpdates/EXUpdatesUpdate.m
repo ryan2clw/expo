@@ -183,7 +183,7 @@ binaryVersions:(NSString *)binaryVersions
       type = [bundledAsset substringFromIndex:extensionStartRange.location + 1];
     }
 
-    NSURL *url = [NSURL URLWithString:hash relativeToURL:[[self class] bundledAssetBaseUrl]];
+    NSURL *url = [[[self class] bundledAssetBaseUrl] URLByAppendingPathComponent:hash];
 
     EXUpdatesAsset *asset = [[EXUpdatesAsset alloc] initWithUrl:url type:(NSString *)type];
     asset.nsBundleFilename = filename;
