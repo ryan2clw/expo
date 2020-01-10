@@ -6,7 +6,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface EXUpdatesReaper : NSObject
 
-+ (void)reapUnusedUpdatesWithSelectionPolicy:(EXUpdatesSelectionPolicy *)selectionPolicy
++ (void)reapUnusedUpdatesWithSelectionPolicy:(id<EXUpdatesSelectionPolicy>)selectionPolicy
                               launchedUpdate:(EXUpdatesUpdate *)launchedUpdate;
 
 @end

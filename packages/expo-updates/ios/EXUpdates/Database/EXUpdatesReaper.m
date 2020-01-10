@@ -8,7 +8,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @implementation EXUpdatesReaper
 
-+ (void)reapUnusedUpdatesWithSelectionPolicy:(EXUpdatesSelectionPolicy *)selectionPolicy
++ (void)reapUnusedUpdatesWithSelectionPolicy:(id<EXUpdatesSelectionPolicy>)selectionPolicy
                               launchedUpdate:(EXUpdatesUpdate *)launchedUpdate
 {
   EXUpdatesDatabase *database = [EXUpdatesAppController sharedInstance].database;

@@ -20,7 +20,7 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 
 @property (nonatomic, readwrite, strong) EXUpdatesAppLauncher *launcher;
 @property (nonatomic, readwrite, strong) EXUpdatesDatabase *database;
-@property (nonatomic, readwrite, strong) EXUpdatesSelectionPolicy *selectionPolicy;
+@property (nonatomic, readwrite, strong) id<EXUpdatesSelectionPolicy> selectionPolicy;
 @property (nonatomic, readwrite, strong) EXUpdatesAppLoaderEmbedded *embeddedAppLoader;
 @property (nonatomic, readwrite, strong) EXUpdatesAppLoaderRemote *remoteAppLoader;
 
@@ -54,7 +54,7 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
   if (self = [super init]) {
     _launcher = [[EXUpdatesAppLauncher alloc] init];
     _database = [[EXUpdatesDatabase alloc] init];
-    _selectionPolicy = [[EXUpdatesSelectionPolicy alloc] init];
+    _selectionPolicy = [[EXUpdatesSelectionPolicyNewest alloc] init];
     _remoteAppLoader = [[EXUpdatesAppLoaderRemote alloc] init];
     _embeddedAppLoader = [[EXUpdatesAppLoaderEmbedded alloc] init];
     _isEnabled = NO;

@@ -13,7 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, readonly) EXUpdatesAppLauncher *launcher;
 @property (nonatomic, readonly) EXUpdatesDatabase *database;
-@property (nonatomic, readonly) EXUpdatesSelectionPolicy *selectionPolicy;
+@property (nonatomic, readonly) id<EXUpdatesSelectionPolicy> selectionPolicy;
 @property (nonatomic, readonly) EXUpdatesAppLoaderEmbedded *embeddedAppLoader;
 @property (nonatomic, readwrite, weak) RCTBridge *bridge;
 

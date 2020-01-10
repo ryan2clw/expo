@@ -4,7 +4,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface EXUpdatesSelectionPolicyNewest : EXUpdatesSelectionPolicy
+@interface EXUpdatesSelectionPolicyNewest : NSObject <EXUpdatesSelectionPolicy>
 
 @end
 

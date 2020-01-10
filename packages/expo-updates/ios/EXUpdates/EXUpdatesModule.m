@@ -68,7 +68,7 @@ UM_EXPORT_METHOD_AS(checkForUpdateAsync,
   EXUpdatesFileDownloader *fileDownloader = [[EXUpdatesFileDownloader alloc] initWithURLSessionConfiguration:configuration];
   [fileDownloader downloadManifestFromURL:[EXUpdatesConfig sharedInstance].remoteUrl successBlock:^(EXUpdatesUpdate * _Nonnull update) {
     EXUpdatesUpdate *launchedUpdate = [EXUpdatesAppController sharedInstance].launcher.launchedUpdate;
-    EXUpdatesSelectionPolicy *selectionPolicy = [EXUpdatesAppController sharedInstance].selectionPolicy;
+    id<EXUpdatesSelectionPolicy> selectionPolicy = [EXUpdatesAppController sharedInstance].selectionPolicy;
     if ([selectionPolicy shouldLoadNewUpdate:update withLaunchedUpdate:launchedUpdate]) {
       resolve(update.rawManifest);
     } else {
@@ -106,7 +106,7 @@ UM_EXPORT_METHOD_AS(fetchUpdateAsync,
 - (BOOL)appLoader:(EXUpdatesAppLoader *)appLoader shouldStartLoadingUpdate:(EXUpdatesUpdate *)update
 {
   EXUpdatesUpdate *launchedUpdate = [EXUpdatesAppController sharedInstance].launcher.launchedUpdate;
-  EXUpdatesSelectionPolicy *selectionPolicy = [EXUpdatesAppController sharedInstance].selectionPolicy;
+  id<EXUpdatesSelectionPolicy> selectionPolicy = [EXUpdatesAppController sharedInstance].selectionPolicy;
   return [selectionPolicy shouldLoadNewUpdate:update withLaunchedUpdate:launchedUpdate];
 }
 

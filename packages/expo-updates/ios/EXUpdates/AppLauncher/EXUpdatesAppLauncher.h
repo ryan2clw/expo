@@ -20,9 +20,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly) NSURL * _Nullable launchAssetUrl;
 @property (nonatomic, strong, readonly) NSDictionary * _Nullable assetFilesMap;
 
-- (void)launchUpdateWithSelectionPolicy:(EXUpdatesSelectionPolicy *)selectionPolicy;
+- (void)launchUpdateWithSelectionPolicy:(id<EXUpdatesSelectionPolicy>)selectionPolicy;
 
-- (EXUpdatesUpdate * _Nullable)launchableUpdateWithSelectionPolicy:(EXUpdatesSelectionPolicy *)selectionPolicy;
+- (EXUpdatesUpdate * _Nullable)launchableUpdateWithSelectionPolicy:(id<EXUpdatesSelectionPolicy>)selectionPolicy;
 
 @end
 

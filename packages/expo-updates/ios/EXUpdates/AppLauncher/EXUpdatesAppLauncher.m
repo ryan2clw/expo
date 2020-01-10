@@ -37,7 +37,7 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
   return self;
 }
 
-- (EXUpdatesUpdate * _Nullable)launchableUpdateWithSelectionPolicy:(EXUpdatesSelectionPolicy *)selectionPolicy
+- (EXUpdatesUpdate * _Nullable)launchableUpdateWithSelectionPolicy:(id<EXUpdatesSelectionPolicy>)selectionPolicy
 {
   if (!_launchableUpdate) {
     EXUpdatesDatabase *database = [EXUpdatesAppController sharedInstance].database;
@@ -47,7 +47,7 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
   return _launchableUpdate;
 }
 
-- (void)launchUpdateWithSelectionPolicy:(EXUpdatesSelectionPolicy *)selectionPolicy
+- (void)launchUpdateWithSelectionPolicy:(id<EXUpdatesSelectionPolicy>)selectionPolicy
 {
   if (!_launchedUpdate) {
     _launchedUpdate = [self launchableUpdateWithSelectionPolicy:selectionPolicy];
