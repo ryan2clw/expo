@@ -39,6 +39,7 @@ static NSString * const kEXUpdatesAppLoaderErrorDomain = @"EXUpdatesAppLoader";
     _assetQueue = [NSMutableArray new];
     _erroredAssets = [NSMutableArray new];
     _finishedAssets = [NSMutableArray new];
+    _existingAssets = [NSMutableArray new];
     _arrayLock = [[NSLock alloc] init];
   }
   return self;
