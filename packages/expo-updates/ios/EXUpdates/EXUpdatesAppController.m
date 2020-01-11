@@ -199,12 +199,13 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 
 - (void)appLoader:(EXUpdatesAppLoader *)appLoader didFinishLoadingUpdate:(EXUpdatesUpdate * _Nullable)update
 {
+  if (_timer) {
+    [_timer invalidate];
+  }
+  _isTimeoutFinished = YES;
+
   if (update) {
     if (!_hasLaunched) {
-      if (_timer) {
-        [_timer invalidate];
-      }
-      _isTimeoutFinished = YES;
       EXUpdatesAppLauncher *newLauncher = [[EXUpdatesAppLauncher alloc] init];
       [newLauncher launchUpdateWithSelectionPolicy:_selectionPolicy];
     } else {
@@ -215,6 +216,8 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
     }
   } else {
     NSLog(@"No update available");
+    // there's no update, so signal we're ready to launch
+    [_launchCondition signal];
     [self _sendEventToBridgeWithType:kEXUpdatesNoUpdateAvailableEventName body:@{}];
     [EXUpdatesReaper reapUnusedUpdatesWithSelectionPolicy:_selectionPolicy
                                            launchedUpdate:_launcher.launchedUpdate];
