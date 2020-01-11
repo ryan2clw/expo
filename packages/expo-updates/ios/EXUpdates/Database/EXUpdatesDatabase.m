@@ -33,6 +33,7 @@ static NSString * const kEXUpdatesDatabaseFilename = @"updates.db";
 {
   sqlite3 *db;
   NSURL *dbUrl = [[EXUpdatesAppController sharedInstance].updatesDirectory URLByAppendingPathComponent:kEXUpdatesDatabaseFilename];
+  NSLog(@"%@", [dbUrl absoluteString]);
   BOOL shouldInitializeDatabase = ![[NSFileManager defaultManager] fileExistsAtPath:[dbUrl path]];
   int resultCode = sqlite3_open([[dbUrl absoluteString] UTF8String], &db);
   if (resultCode != SQLITE_OK) {
