@@ -27,6 +27,7 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 @property (nonatomic, readwrite, strong) NSURL *updatesDirectory;
 @property (nonatomic, readwrite, assign) BOOL isEnabled;
 
+@property (nonatomic, strong) EXUpdatesAppLauncher *candidateLauncher;
 @property (nonatomic, strong) NSTimer *timer;
 @property (nonatomic, assign) BOOL isReadyToLaunch;
 @property (nonatomic, assign) BOOL isTimeoutFinished;
@@ -78,7 +79,7 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
     [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSDefaultRunLoopMode];
   }
 
-  [self _copyEmbeddedAssets];
+  [self _maybeLoadEmbeddedUpdate];
 
   _launcher.delegate = self;
   [_launcher launchUpdateWithSelectionPolicy:_selectionPolicy];
@@ -178,7 +179,7 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
   [self _maybeFinish];
 }
 
-- (void)_copyEmbeddedAssets
+- (void)_maybeLoadEmbeddedUpdate
 {
   if ([_selectionPolicy shouldLoadNewUpdate:_embeddedAppLoader.embeddedManifest withLaunchedUpdate:[_launcher launchableUpdateWithSelectionPolicy:_selectionPolicy]]) {
     [_embeddedAppLoader loadUpdateFromEmbeddedManifest];
@@ -243,9 +244,9 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 
     if (update) {
       if (!self->_hasLaunched) {
-        EXUpdatesAppLauncher *newLauncher = [[EXUpdatesAppLauncher alloc] init];
-        newLauncher.delegate = self;
-        [newLauncher launchUpdateWithSelectionPolicy:self->_selectionPolicy];
+        self->_candidateLauncher = [[EXUpdatesAppLauncher alloc] init];
+        self->_candidateLauncher.delegate = self;
+        [self->_candidateLauncher launchUpdateWithSelectionPolicy:self->_selectionPolicy];
       } else {
         [self _sendEventToBridgeWithType:kEXUpdatesUpdateAvailableEventName
                                     body:@{@"manifest": update.rawManifest}];
