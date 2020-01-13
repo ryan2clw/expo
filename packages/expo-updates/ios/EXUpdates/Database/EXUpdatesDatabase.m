@@ -123,8 +123,8 @@ static NSString * const kEXUpdatesDatabaseFilename = @"updates.db";
    CREATE TABLE \"updates_assets\" (\
    \"update_id\"  BLOB NOT NULL,\
    \"asset_id\" INTEGER NOT NULL,\
-   FOREIGN KEY(\"update_id\") REFERENCES \"updates\"(\"id\"),\
-   FOREIGN KEY(\"asset_id\") REFERENCES \"assets\"(\"id\")\
+   FOREIGN KEY(\"update_id\") REFERENCES \"updates\"(\"id\") ON DELETE CASCADE,\
+   FOREIGN KEY(\"asset_id\") REFERENCES \"assets\"(\"id\") ON DELETE CASCADE\
    );\
    CREATE INDEX \"index_updates_launch_asset_id\" ON \"updates\" (\"launch_asset_id\");\
    ";
