@@ -9,8 +9,17 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class EXUpdatesAppController;
+
+@protocol EXUpdatesAppControllerDelegate <NSObject>
+
+- (void)appController:(EXUpdatesAppController *)appController didStartWithSuccess:(BOOL)success;
+
+@end
+
 @interface EXUpdatesAppController : NSObject <EXUpdatesAppLoaderDelegate, EXUpdatesAppLauncherDelegate>
 
+@property (nonatomic, weak) id<EXUpdatesAppControllerDelegate> delegate;
 @property (nonatomic, readonly) EXUpdatesAppLauncher *launcher;
 @property (nonatomic, readonly) EXUpdatesDatabase *database;
 @property (nonatomic, readonly) id<EXUpdatesSelectionPolicy> selectionPolicy;

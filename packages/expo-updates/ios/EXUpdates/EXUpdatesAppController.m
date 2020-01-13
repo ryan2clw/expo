@@ -28,7 +28,6 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 @property (nonatomic, readwrite, assign) BOOL isEnabled;
 
 @property (nonatomic, strong) NSTimer *timer;
-@property (nonatomic, strong) NSCondition *launchCondition;
 @property (nonatomic, assign) BOOL isReadyToLaunch;
 @property (nonatomic, assign) BOOL isTimeoutFinished;
 @property (nonatomic, assign) BOOL hasLaunched;
@@ -69,7 +68,6 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 {
   _isEnabled = YES;
   [_database openDatabaseWithError:nil];
-  _launchCondition = [[NSCondition alloc] init];
 
   NSNumber *launchWaitMs = [EXUpdatesConfig sharedInstance].launchWaitMs;
   if ([launchWaitMs isEqualToNumber:@(0)]) {
@@ -77,7 +75,7 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
   } else {
     NSDate *fireDate = [NSDate dateWithTimeIntervalSinceNow:[launchWaitMs doubleValue] / 1000];
     _timer = [[NSTimer alloc] initWithFireDate:fireDate interval:0 target:self selector:@selector(_timerDidFire) userInfo:nil repeats:NO];
-    [[NSRunLoop currentRunLoop] addTimer:_timer forMode:NSDefaultRunLoopMode];
+    [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSDefaultRunLoopMode];
   }
 
   [self _copyEmbeddedAssets];
@@ -99,10 +97,6 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 
 - (NSURL * _Nullable)launchAssetUrl
 {
-  while (!_isReadyToLaunch || !_isTimeoutFinished) {
-    [_launchCondition wait];
-  }
-  _hasLaunched = YES;
   return _launcher.launchAssetUrl ?: nil;
 }
 
@@ -136,10 +130,28 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 
 # pragma mark - internal
 
+- (void)_maybeFinish
+{
+  NSAssert([NSThread isMainThread], @"EXUpdatesAppController:_maybeFinish should only be called on the main thread");
+  if (!_isTimeoutFinished || !_isReadyToLaunch) {
+    // too early, bail out
+    return;
+  }
+  if (_hasLaunched) {
+    // we've already fired once, don't do it again
+    return;
+  }
+
+  _hasLaunched = YES;
+  if (self->_delegate) {
+    [self->_delegate appController:self didStartWithSuccess:YES];
+  }
+}
+
 - (void)_timerDidFire
 {
   _isTimeoutFinished = YES;
-  [_launchCondition signal];
+  [self _maybeFinish];
 }
 
 - (void)_copyEmbeddedAssets
@@ -199,56 +211,70 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 
 - (void)appLoader:(EXUpdatesAppLoader *)appLoader didFinishLoadingUpdate:(EXUpdatesUpdate * _Nullable)update
 {
-  if (_timer) {
-    [_timer invalidate];
-  }
-  _isTimeoutFinished = YES;
-
-  if (update) {
-    if (!_hasLaunched) {
-      EXUpdatesAppLauncher *newLauncher = [[EXUpdatesAppLauncher alloc] init];
-      [newLauncher launchUpdateWithSelectionPolicy:_selectionPolicy];
-    } else {
-      [self _sendEventToBridgeWithType:kEXUpdatesUpdateAvailableEventName
-                                  body:@{@"manifest": update.rawManifest}];
-      [EXUpdatesReaper reapUnusedUpdatesWithSelectionPolicy:_selectionPolicy
-                                             launchedUpdate:_launcher.launchedUpdate];
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (self->_timer) {
+      [self->_timer invalidate];
     }
-  } else {
-    NSLog(@"No update available");
-    // there's no update, so signal we're ready to launch
-    [_launchCondition signal];
-    [self _sendEventToBridgeWithType:kEXUpdatesNoUpdateAvailableEventName body:@{}];
-    [EXUpdatesReaper reapUnusedUpdatesWithSelectionPolicy:_selectionPolicy
-                                           launchedUpdate:_launcher.launchedUpdate];
-  }
+    self->_isTimeoutFinished = YES;
+
+    if (update) {
+      if (!self->_hasLaunched) {
+        EXUpdatesAppLauncher *newLauncher = [[EXUpdatesAppLauncher alloc] init];
+        newLauncher.delegate = self;
+        [newLauncher launchUpdateWithSelectionPolicy:self->_selectionPolicy];
+      } else {
+        [self _sendEventToBridgeWithType:kEXUpdatesUpdateAvailableEventName
+                                    body:@{@"manifest": update.rawManifest}];
+        [EXUpdatesReaper reapUnusedUpdatesWithSelectionPolicy:self->_selectionPolicy
+                                               launchedUpdate:self->_launcher.launchedUpdate];
+      }
+    } else {
+      NSLog(@"No update available");
+      // there's no update, so signal we're ready to launch
+      [self _maybeFinish];
+      [self _sendEventToBridgeWithType:kEXUpdatesNoUpdateAvailableEventName body:@{}];
+      [EXUpdatesReaper reapUnusedUpdatesWithSelectionPolicy:self->_selectionPolicy
+                                             launchedUpdate:self->_launcher.launchedUpdate];
+    }
+  });
 }
 
 - (void)appLoader:(EXUpdatesAppLoader *)appLoader didFailWithError:(NSError *)error
 {
-  NSLog(@"update failed to load: %@", error.localizedDescription);
-  [self _sendEventToBridgeWithType:kEXUpdatesErrorEventName body:@{@"message": error.localizedDescription}];
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (self->_timer) {
+      [self->_timer invalidate];
+    }
+    self->_isTimeoutFinished = YES;
+    NSLog(@"update failed to load: %@", error.localizedDescription);
+    [self _maybeFinish];
+    [self _sendEventToBridgeWithType:kEXUpdatesErrorEventName body:@{@"message": error.localizedDescription}];
+  });
 }
 
 # pragma mark - EXUpdatesAppLauncherDelegate
 
 - (void)appLauncher:(EXUpdatesAppLauncher *)appLauncher didFinishWithSuccess:(BOOL)success
 {
-  if (success) {
-    _isReadyToLaunch = YES;
-    _launcher = appLauncher;
-    [_launchCondition signal];
+  dispatch_async(dispatch_get_main_queue(), ^{
+    if (success) {
+      self->_isReadyToLaunch = YES;
+      if (!self->_hasLaunched) {
+        self->_launcher = appLauncher;
+        [self _maybeFinish];
+      }
 
-    if ([self _shouldCheckForUpdate]) {
-      _remoteAppLoader.delegate = self;
-      [_remoteAppLoader loadUpdateFromUrl:[EXUpdatesConfig sharedInstance].remoteUrl];
+      if ([self _shouldCheckForUpdate]) {
+        self->_remoteAppLoader.delegate = self;
+        [self->_remoteAppLoader loadUpdateFromUrl:[EXUpdatesConfig sharedInstance].remoteUrl];
+      } else {
+        [EXUpdatesReaper reapUnusedUpdatesWithSelectionPolicy:self->_selectionPolicy
+                                               launchedUpdate:self->_launcher.launchedUpdate];
+      }
     } else {
-      [EXUpdatesReaper reapUnusedUpdatesWithSelectionPolicy:_selectionPolicy
-                                             launchedUpdate:_launcher.launchedUpdate];
+      // TODO: emergency launch
     }
-  } else {
-    // TODO: emergency launch
-  }
+  });
 }
 
 @end
