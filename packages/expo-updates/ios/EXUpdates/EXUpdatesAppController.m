@@ -84,6 +84,30 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
   [_launcher launchUpdateWithSelectionPolicy:_selectionPolicy];
 }
 
+- (void)startAndShowLaunchScreen:(UIWindow *)window
+{
+  UIViewController *rootViewController = [UIViewController new];
+  NSArray *views;
+  @try {
+    NSString *launchScreen = (NSString *)[[NSBundle mainBundle] objectForInfoDictionaryKey:@"UILaunchStoryboardName"] ?: @"LaunchScreen";
+    views = [[NSBundle mainBundle] loadNibNamed:launchScreen owner:self options:nil];
+  } @catch (NSException *_) {
+    NSLog(@"LaunchScreen.xib is missing. Unexpected loading behavior may occur.");
+  }
+  if (views) {
+    rootViewController.view = views.firstObject;
+    rootViewController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+  } else {
+    UIView *view = [UIView new];
+    view.backgroundColor = [UIColor whiteColor];;
+    rootViewController.view = view;
+  }
+  window.rootViewController = rootViewController;
+  [window makeKeyAndVisible];
+
+  [self start];
+}
+
 - (BOOL)reloadBridge
 {
   if (_bridge) {

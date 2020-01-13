@@ -32,6 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)sharedInstance;
 
 - (void)start;
+- (void)startAndShowLaunchScreen:(UIWindow *)window;
 - (BOOL)reloadBridge;
 - (NSURL * _Nullable)launchAssetUrl;
 
