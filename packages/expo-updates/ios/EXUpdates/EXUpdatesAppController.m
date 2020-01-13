@@ -55,7 +55,6 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
     _launcher = [[EXUpdatesAppLauncher alloc] init];
     _database = [[EXUpdatesDatabase alloc] init];
     _selectionPolicy = [[EXUpdatesSelectionPolicyNewest alloc] init];
-    _remoteAppLoader = [[EXUpdatesAppLoaderRemote alloc] init];
     _embeddedAppLoader = [[EXUpdatesAppLoaderEmbedded alloc] init];
     _isEnabled = NO;
     _isReadyToLaunch = NO;
@@ -197,12 +196,8 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
   }
 }
 
-- (BOOL)_shouldCheckForUpdate
++ (BOOL)_shouldCheckForUpdate
 {
-  if (_hasLaunched) {
-    return NO;
-  }
-
   EXUpdatesConfig *config = [EXUpdatesConfig sharedInstance];
   switch (config.checkOnLaunch) {
     case EXUpdatesCheckAutomaticallyConfigNever:
@@ -289,7 +284,8 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
         [self _maybeFinish];
       }
 
-      if ([self _shouldCheckForUpdate]) {
+      if (!self->_remoteAppLoader && [[self class] _shouldCheckForUpdate]) {
+        self->_remoteAppLoader = [[EXUpdatesAppLoaderRemote alloc] init];
         self->_remoteAppLoader.delegate = self;
         [self->_remoteAppLoader loadUpdateFromUrl:[EXUpdatesConfig sharedInstance].remoteUrl];
       } else {
