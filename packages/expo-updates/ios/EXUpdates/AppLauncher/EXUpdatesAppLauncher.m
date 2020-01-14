@@ -84,7 +84,7 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
   if (!assetFileExists) {
     // something has gone wrong, we're missing the asset
     // first check to see if a copy is embedded in the binary
-    EXUpdatesUpdate *embeddedManifest = [EXUpdatesAppController sharedInstance].embeddedAppLoader.embeddedManifest;
+    EXUpdatesUpdate *embeddedManifest = [EXUpdatesAppLoaderEmbedded embeddedManifest];
     if (embeddedManifest) {
       EXUpdatesAsset *matchingAsset;
       for (EXUpdatesAsset *embeddedAsset in embeddedManifest.assets) {

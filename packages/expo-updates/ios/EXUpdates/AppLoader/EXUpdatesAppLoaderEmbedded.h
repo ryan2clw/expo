@@ -4,10 +4,14 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+extern NSString * const kEXUpdatesEmbeddedManifestName;
+extern NSString * const kEXUpdatesEmbeddedManifestType;
+extern NSString * const kEXUpdatesEmbeddedBundleFilename;
+extern NSString * const kEXUpdatesEmbeddedBundleFileType;
+
 @interface EXUpdatesAppLoaderEmbedded : EXUpdatesAppLoader
 
-@property (nonatomic, strong, readonly) EXUpdatesUpdate * _Nullable embeddedManifest;
-
++ (EXUpdatesUpdate * _Nullable)embeddedManifest;
 - (void)loadUpdateFromEmbeddedManifest;
 
 @end

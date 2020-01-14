@@ -20,12 +20,14 @@ NS_ASSUME_NONNULL_BEGIN
 @interface EXUpdatesAppController : NSObject <EXUpdatesAppLoaderDelegate>
 
 @property (nonatomic, weak) id<EXUpdatesAppControllerDelegate> delegate;
-@property (nonatomic, readonly) EXUpdatesAppLauncher *launcher;
+@property (nonatomic, weak) RCTBridge *bridge;
+
+@property (nonatomic, readonly, strong) EXUpdatesUpdate * _Nullable launchedUpdate;
+@property (nonatomic, readonly, strong) NSURL * _Nullable launchAssetUrl;
+@property (nonatomic, readonly, strong) NSDictionary * _Nullable assetFilesMap;
+
 @property (nonatomic, readonly) EXUpdatesDatabase *database;
 @property (nonatomic, readonly) id<EXUpdatesSelectionPolicy> selectionPolicy;
-@property (nonatomic, readonly) EXUpdatesAppLoaderEmbedded *embeddedAppLoader;
-@property (nonatomic, readwrite, weak) RCTBridge *bridge;
-
 @property (nonatomic, readonly) NSURL *updatesDirectory;
 @property (nonatomic, readonly, assign) BOOL isEnabled;
 
@@ -34,7 +36,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)start;
 - (void)startAndShowLaunchScreen:(UIWindow *)window;
 - (BOOL)requestReload;
-- (NSURL * _Nullable)launchAssetUrl;
 
 @end
 

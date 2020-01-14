@@ -144,9 +144,19 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
   }
 }
 
+- (EXUpdatesUpdate * _Nullable)launchedUpdate
+{
+  return _launcher.launchedUpdate ?: nil;
+}
+
 - (NSURL * _Nullable)launchAssetUrl
 {
   return _launcher.launchAssetUrl ?: nil;
+}
+
+- (NSDictionary * _Nullable)assetFilesMap
+{
+  return _launcher.assetFilesMap ?: nil;
 }
 
 - (NSURL *)updatesDirectory
@@ -206,8 +216,9 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 
 - (void)_maybeLoadEmbeddedUpdate
 {
-  _embeddedAppLoader = [[EXUpdatesAppLoaderEmbedded alloc] init];
-  if ([_selectionPolicy shouldLoadNewUpdate:_embeddedAppLoader.embeddedManifest withLaunchedUpdate:[EXUpdatesAppLauncher launchableUpdateWithSelectionPolicy:_selectionPolicy]]) {
+  if ([_selectionPolicy shouldLoadNewUpdate:[EXUpdatesAppLoaderEmbedded embeddedManifest]
+                         withLaunchedUpdate:[EXUpdatesAppLauncher launchableUpdateWithSelectionPolicy:_selectionPolicy]]) {
+    _embeddedAppLoader = [[EXUpdatesAppLoaderEmbedded alloc] init];
     [_embeddedAppLoader loadUpdateFromEmbeddedManifest];
   }
 }

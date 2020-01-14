@@ -5,38 +5,38 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-static NSString * const kEXUpdatesEmbeddedManifestName = @"shell-app-manifest";
-static NSString * const kEXUpdatesEmbeddedManifestType = @"json";
-
-@interface EXUpdatesAppLoaderEmbedded ()
-
-@property (nonatomic, strong, readwrite) EXUpdatesUpdate * _Nullable embeddedManifest;
-
-@end
+NSString * const kEXUpdatesEmbeddedManifestName = @"shell-app-manifest";
+NSString * const kEXUpdatesEmbeddedManifestType = @"json";
+NSString * const kEXUpdatesEmbeddedBundleFilename = @"shell-app";
+NSString * const kEXUpdatesEmbeddedBundleFileType = @"bundle";
 
 @implementation EXUpdatesAppLoaderEmbedded
 
-- (EXUpdatesUpdate * _Nullable)embeddedManifest
++ (EXUpdatesUpdate * _Nullable)embeddedManifest
 {
-  if (!_embeddedManifest) {
-    NSString *path = [[NSBundle mainBundle] pathForResource:kEXUpdatesEmbeddedManifestName ofType:kEXUpdatesEmbeddedManifestType];
-    NSData *manifestData = [NSData dataWithContentsOfFile:path];
-    
-    NSError *err;
-    id manifest = [NSJSONSerialization JSONObjectWithData:manifestData options:kNilOptions error:&err];
-    if (!manifest) {
-      NSLog(@"Could not read embedded manifest: %@", [err localizedDescription]);
-    } else {
-      NSAssert([manifest isKindOfClass:[NSDictionary class]], @"embedded manifest should be a valid JSON file");
-      _embeddedManifest = [EXUpdatesUpdate updateWithManagedManifest:(NSDictionary *)manifest];
+  static EXUpdatesUpdate *embeddedManifest;
+  static dispatch_once_t once;
+  dispatch_once(&once, ^{
+    if (!embeddedManifest) {
+      NSString *path = [[NSBundle mainBundle] pathForResource:kEXUpdatesEmbeddedManifestName ofType:kEXUpdatesEmbeddedManifestType];
+      NSData *manifestData = [NSData dataWithContentsOfFile:path];
+
+      NSError *err;
+      id manifest = [NSJSONSerialization JSONObjectWithData:manifestData options:kNilOptions error:&err];
+      if (!manifest) {
+        NSLog(@"Could not read embedded manifest: %@", [err localizedDescription]);
+      } else {
+        NSAssert([manifest isKindOfClass:[NSDictionary class]], @"embedded manifest should be a valid JSON file");
+        embeddedManifest = [EXUpdatesUpdate updateWithManagedManifest:(NSDictionary *)manifest];
+      }
     }
-  }
-  return _embeddedManifest;
+  });
+  return embeddedManifest;
 }
 
 - (void)loadUpdateFromEmbeddedManifest
 {
-  [self startLoadingFromManifest:self.embeddedManifest];
+  [self startLoadingFromManifest:[[self class] embeddedManifest]];
 }
 
 - (void)downloadAsset:(EXUpdatesAsset *)asset

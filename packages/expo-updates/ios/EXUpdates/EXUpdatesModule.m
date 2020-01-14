@@ -30,13 +30,13 @@ UM_EXPORT_MODULE(ExpoUpdates);
 - (NSDictionary *)constantsToExport
 {
   EXUpdatesAppController *controller = [EXUpdatesAppController sharedInstance];
-  EXUpdatesUpdate *launchedUpdate = controller.launcher.launchedUpdate;
+  EXUpdatesUpdate *launchedUpdate = controller.launchedUpdate;
   if (!launchedUpdate) {
     return @{};
   } else {
     return @{
       @"manifest": launchedUpdate.rawManifest,
-      @"localAssets": controller.launcher.assetFilesMap ?: @{}
+      @"localAssets": controller.assetFilesMap ?: @{}
     };
   }
   
@@ -67,7 +67,7 @@ UM_EXPORT_METHOD_AS(checkForUpdateAsync,
   configuration.requestCachePolicy = NSURLRequestReloadIgnoringCacheData;
   EXUpdatesFileDownloader *fileDownloader = [[EXUpdatesFileDownloader alloc] initWithURLSessionConfiguration:configuration];
   [fileDownloader downloadManifestFromURL:[EXUpdatesConfig sharedInstance].remoteUrl successBlock:^(EXUpdatesUpdate * _Nonnull update) {
-    EXUpdatesUpdate *launchedUpdate = [EXUpdatesAppController sharedInstance].launcher.launchedUpdate;
+    EXUpdatesUpdate *launchedUpdate = [EXUpdatesAppController sharedInstance].launchedUpdate;
     id<EXUpdatesSelectionPolicy> selectionPolicy = [EXUpdatesAppController sharedInstance].selectionPolicy;
     if ([selectionPolicy shouldLoadNewUpdate:update withLaunchedUpdate:launchedUpdate]) {
       resolve(update.rawManifest);
@@ -105,7 +105,7 @@ UM_EXPORT_METHOD_AS(fetchUpdateAsync,
 
 - (BOOL)appLoader:(EXUpdatesAppLoader *)appLoader shouldStartLoadingUpdate:(EXUpdatesUpdate *)update
 {
-  EXUpdatesUpdate *launchedUpdate = [EXUpdatesAppController sharedInstance].launcher.launchedUpdate;
+  EXUpdatesUpdate *launchedUpdate = [EXUpdatesAppController sharedInstance].launchedUpdate;
   id<EXUpdatesSelectionPolicy> selectionPolicy = [EXUpdatesAppController sharedInstance].selectionPolicy;
   return [selectionPolicy shouldLoadNewUpdate:update withLaunchedUpdate:launchedUpdate];
 }

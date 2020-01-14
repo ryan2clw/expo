@@ -1,15 +1,13 @@
 //  Copyright © 2019 650 Industries. All rights reserved.
 
 #import <EXUpdates/EXUpdatesAppController.h>
+#import <EXUpdates/EXUpdatesAppLoaderEmbedded.h>
 #import <EXUpdates/EXUpdatesDatabase.h>
 #import <EXUpdates/EXUpdatesUpdate.h>
 #import <EXUpdates/EXUpdatesUtils.h>
 #import <React/RCTConvert.h>
 
 NS_ASSUME_NONNULL_BEGIN
-
-static NSString * const kEXUpdatesEmbeddedBundleFilename = @"shell-app";
-static NSString * const kEXUpdatesEmbeddedBundleFileType = @"bundle";
 
 @interface EXUpdatesUpdate ()
 
