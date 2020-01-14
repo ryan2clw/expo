@@ -52,10 +52,8 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 - (instancetype)init
 {
   if (self = [super init]) {
-    _launcher = [[EXUpdatesAppLauncher alloc] init];
     _database = [[EXUpdatesDatabase alloc] init];
     _selectionPolicy = [[EXUpdatesSelectionPolicyNewest alloc] init];
-    _embeddedAppLoader = [[EXUpdatesAppLoaderEmbedded alloc] init];
     _isEnabled = NO;
     _isReadyToLaunch = NO;
     _isTimeoutFinished = NO;
@@ -80,6 +78,7 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 
   [self _maybeLoadEmbeddedUpdate];
 
+  _launcher = [[EXUpdatesAppLauncher alloc] init];
   _launcher.delegate = self;
   [_launcher launchUpdateWithSelectionPolicy:_selectionPolicy];
 }
@@ -180,7 +179,8 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 
 - (void)_maybeLoadEmbeddedUpdate
 {
-  if ([_selectionPolicy shouldLoadNewUpdate:_embeddedAppLoader.embeddedManifest withLaunchedUpdate:[_launcher launchableUpdateWithSelectionPolicy:_selectionPolicy]]) {
+  _embeddedAppLoader = [[EXUpdatesAppLoaderEmbedded alloc] init];
+  if ([_selectionPolicy shouldLoadNewUpdate:_embeddedAppLoader.embeddedManifest withLaunchedUpdate:[EXUpdatesAppLauncher launchableUpdateWithSelectionPolicy:_selectionPolicy]]) {
     [_embeddedAppLoader loadUpdateFromEmbeddedManifest];
   }
 }

@@ -36,7 +36,7 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
   return self;
 }
 
-- (EXUpdatesUpdate * _Nullable)launchableUpdateWithSelectionPolicy:(id<EXUpdatesSelectionPolicy>)selectionPolicy
++ (EXUpdatesUpdate * _Nullable)launchableUpdateWithSelectionPolicy:(id<EXUpdatesSelectionPolicy>)selectionPolicy
 {
   EXUpdatesDatabase *database = [EXUpdatesAppController sharedInstance].database;
   NSArray<EXUpdatesUpdate *>* launchableUpdates = [database launchableUpdates];
@@ -46,7 +46,7 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
 - (void)launchUpdateWithSelectionPolicy:(id<EXUpdatesSelectionPolicy>)selectionPolicy
 {
   if (!_launchedUpdate) {
-    _launchedUpdate = [self launchableUpdateWithSelectionPolicy:selectionPolicy];
+    _launchedUpdate = [[self class] launchableUpdateWithSelectionPolicy:selectionPolicy];
   }
   
   _assetFilesMap = [NSMutableDictionary new];
