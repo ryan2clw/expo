@@ -15,6 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readwrite) NSMutableDictionary * _Nullable assetFilesMap;
 
 @property (nonatomic, strong) EXUpdatesFileDownloader *downloader;
+@property (nonatomic, copy) EXUpdatesAppLauncherCompletionBlock completion;
 
 @property (nonatomic, strong) NSLock *lock;
 @property (nonatomic, assign) int assetsToDownload;
@@ -44,7 +45,10 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
 }
 
 - (void)launchUpdateWithSelectionPolicy:(id<EXUpdatesSelectionPolicy>)selectionPolicy
+                             completion:(EXUpdatesAppLauncherCompletionBlock)completion
 {
+  NSAssert(!_completion, @"EXUpdatesAppLauncher:launchUpdateWithSelectionPolicy:successBlock should not be called twice on the same instance");
+  _completion = completion;
   if (!_launchedUpdate) {
     _launchedUpdate = [[self class] launchableUpdateWithSelectionPolicy:selectionPolicy];
   }
@@ -66,8 +70,9 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
     }
   }
 
-  if (_assetsToDownload == 0 && _delegate) {
-    [_delegate appLauncher:self didFinishWithSuccess:YES];
+  if (_assetsToDownload == 0) {
+    _completion(YES);
+    _completion = nil;
   }
   [_lock unlock];
 }
@@ -137,8 +142,9 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
     [_assetFilesMap setObject:[localUrl absoluteString] forKey:[asset.url absoluteString]];
   }
 
-  if (_assetsToDownloadFinished == _assetsToDownload && _delegate) {
-    [_delegate appLauncher:self didFinishWithSuccess:_launchAssetUrl != nil];
+  if (_assetsToDownloadFinished == _assetsToDownload) {
+    _completion(_launchAssetUrl != nil);
+    _completion = nil;
   }
   [_lock unlock];
 }
@@ -147,8 +153,9 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
 {
   [_lock lock];
   _assetsToDownloadFinished++;
-  if (_assetsToDownloadFinished == _assetsToDownload && _delegate) {
-    [_delegate appLauncher:self didFinishWithSuccess:_launchAssetUrl != nil];
+  if (_assetsToDownloadFinished == _assetsToDownload) {
+    _completion(_launchAssetUrl != nil);
+    _completion = nil;
   }
   [_lock unlock];
 }

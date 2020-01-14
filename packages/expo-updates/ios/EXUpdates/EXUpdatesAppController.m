@@ -30,10 +30,8 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 @property (nonatomic, strong) EXUpdatesAppLauncher *candidateLauncher;
 @property (nonatomic, strong) NSTimer *timer;
 @property (nonatomic, assign) BOOL isReadyToLaunch;
-@property (nonatomic, assign) BOOL isTimeoutFinished;
+@property (nonatomic, assign) BOOL isTimerFinished;
 @property (nonatomic, assign) BOOL hasLaunched;
-
-@property (nonatomic, assign) BOOL reloadRequested;
 
 @end
 
@@ -58,9 +56,8 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
     _selectionPolicy = [[EXUpdatesSelectionPolicyNewest alloc] init];
     _isEnabled = NO;
     _isReadyToLaunch = NO;
-    _isTimeoutFinished = NO;
+    _isTimerFinished = NO;
     _hasLaunched = NO;
-    _reloadRequested = NO;
   }
   return self;
 }
@@ -72,7 +69,7 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 
   NSNumber *launchWaitMs = [EXUpdatesConfig sharedInstance].launchWaitMs;
   if ([launchWaitMs isEqualToNumber:@(0)]) {
-    _isTimeoutFinished = YES;
+    _isTimerFinished = YES;
   } else {
     NSDate *fireDate = [NSDate dateWithTimeIntervalSinceNow:[launchWaitMs doubleValue] / 1000];
     _timer = [[NSTimer alloc] initWithFireDate:fireDate interval:0 target:self selector:@selector(_timerDidFire) userInfo:nil repeats:NO];
@@ -82,8 +79,24 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
   [self _maybeLoadEmbeddedUpdate];
 
   _launcher = [[EXUpdatesAppLauncher alloc] init];
-  _launcher.delegate = self;
-  [_launcher launchUpdateWithSelectionPolicy:_selectionPolicy];
+  [_launcher launchUpdateWithSelectionPolicy:_selectionPolicy completion:^(BOOL success) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+      if (success) {
+        self->_isReadyToLaunch = YES;
+        [self _maybeFinish];
+
+        if (!self->_remoteAppLoader && [[self class] _shouldCheckForUpdate]) {
+          self->_remoteAppLoader = [[EXUpdatesAppLoaderRemote alloc] init];
+          self->_remoteAppLoader.delegate = self;
+          [self->_remoteAppLoader loadUpdateFromUrl:[EXUpdatesConfig sharedInstance].remoteUrl];
+        } else {
+          [self _runReaperInBackground];
+        }
+      } else {
+        // TODO: emergency launch
+      }
+    });
+  }];
 }
 
 - (void)startAndShowLaunchScreen:(UIWindow *)window
@@ -114,10 +127,16 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 {
   if (_bridge) {
     [_database.lock lock];
-    _reloadRequested = YES;
     _candidateLauncher = [[EXUpdatesAppLauncher alloc] init];
-    _candidateLauncher.delegate = self;
-    [_candidateLauncher launchUpdateWithSelectionPolicy:self->_selectionPolicy];
+    [_candidateLauncher launchUpdateWithSelectionPolicy:self->_selectionPolicy completion:^(BOOL success) {
+      if (success) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+          self->_launcher = self->_candidateLauncher;
+          [self->_database.lock unlock];
+          [self->_bridge reload];
+        });
+      }
+    }];
     return true;
   } else {
     NSLog(@"EXUpdatesAppController: Failed to reload because bridge was nil. Did you set the bridge property on the controller singleton?");
@@ -163,13 +182,7 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 - (void)_maybeFinish
 {
   NSAssert([NSThread isMainThread], @"EXUpdatesAppController:_maybeFinish should only be called on the main thread");
-  if (_reloadRequested && _bridge) {
-    _reloadRequested = NO;
-    [_database.lock unlock];
-    [_bridge reload];
-    return;
-  }
-  if (!_isTimeoutFinished || !_isReadyToLaunch) {
+  if (!_isTimerFinished || !_isReadyToLaunch) {
     // too early, bail out
     return;
   }
@@ -186,7 +199,8 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 
 - (void)_timerDidFire
 {
-  _isTimeoutFinished = YES;
+  NSAssert([NSThread isMainThread], @"EXUpdatesAppController: timer should only run on mainRunLoop");
+  _isTimerFinished = YES;
   [self _maybeFinish];
 }
 
@@ -207,6 +221,14 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
   } else {
     NSLog(@"EXUpdatesAppController: Could not emit %@ event. Did you set the bridge property on the controller singleton?", eventType);
   }
+}
+
+- (void)_runReaperInBackground
+{
+  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
+    [EXUpdatesReaper reapUnusedUpdatesWithSelectionPolicy:self->_selectionPolicy
+                                           launchedUpdate:self->_launcher.launchedUpdate];
+  });
 }
 
 + (BOOL)_shouldCheckForUpdate
@@ -248,26 +270,32 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
     if (self->_timer) {
       [self->_timer invalidate];
     }
-    self->_isTimeoutFinished = YES;
+    self->_isTimerFinished = YES;
 
     if (update) {
       if (!self->_hasLaunched) {
         self->_candidateLauncher = [[EXUpdatesAppLauncher alloc] init];
-        self->_candidateLauncher.delegate = self;
-        [self->_candidateLauncher launchUpdateWithSelectionPolicy:self->_selectionPolicy];
+        [self->_candidateLauncher launchUpdateWithSelectionPolicy:self->_selectionPolicy completion:^(BOOL success) {
+          if (success) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+              if (!self->_hasLaunched) {
+                self->_launcher = self->_candidateLauncher;
+                [self _maybeFinish];
+              }
+              [self _runReaperInBackground];
+            });
+          }
+        }];
       } else {
         [self _sendEventToBridgeWithType:kEXUpdatesUpdateAvailableEventName
                                     body:@{@"manifest": update.rawManifest}];
-        [EXUpdatesReaper reapUnusedUpdatesWithSelectionPolicy:self->_selectionPolicy
-                                               launchedUpdate:self->_launcher.launchedUpdate];
+        [self _runReaperInBackground];
       }
     } else {
       NSLog(@"No update available");
       // there's no update, so signal we're ready to launch
       [self _maybeFinish];
-      [self _sendEventToBridgeWithType:kEXUpdatesNoUpdateAvailableEventName body:@{}];
-      [EXUpdatesReaper reapUnusedUpdatesWithSelectionPolicy:self->_selectionPolicy
-                                             launchedUpdate:self->_launcher.launchedUpdate];
+      [self _runReaperInBackground];
     }
   });
 }
@@ -278,36 +306,10 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
     if (self->_timer) {
       [self->_timer invalidate];
     }
-    self->_isTimeoutFinished = YES;
+    self->_isTimerFinished = YES;
     NSLog(@"update failed to load: %@", error.localizedDescription);
     [self _maybeFinish];
     [self _sendEventToBridgeWithType:kEXUpdatesErrorEventName body:@{@"message": error.localizedDescription}];
-  });
-}
-
-# pragma mark - EXUpdatesAppLauncherDelegate
-
-- (void)appLauncher:(EXUpdatesAppLauncher *)appLauncher didFinishWithSuccess:(BOOL)success
-{
-  dispatch_async(dispatch_get_main_queue(), ^{
-    if (success) {
-      self->_isReadyToLaunch = YES;
-      if (!self->_hasLaunched || self->_reloadRequested) {
-        self->_launcher = appLauncher;
-        [self _maybeFinish];
-      }
-
-      if (!self->_remoteAppLoader && [[self class] _shouldCheckForUpdate]) {
-        self->_remoteAppLoader = [[EXUpdatesAppLoaderRemote alloc] init];
-        self->_remoteAppLoader.delegate = self;
-        [self->_remoteAppLoader loadUpdateFromUrl:[EXUpdatesConfig sharedInstance].remoteUrl];
-      } else {
-        [EXUpdatesReaper reapUnusedUpdatesWithSelectionPolicy:self->_selectionPolicy
-                                               launchedUpdate:self->_launcher.launchedUpdate];
-      }
-    } else {
-      // TODO: emergency launch
-    }
   });
 }
 

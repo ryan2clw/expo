@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-@interface EXUpdatesAppController : NSObject <EXUpdatesAppLoaderDelegate, EXUpdatesAppLauncherDelegate>
+@interface EXUpdatesAppController : NSObject <EXUpdatesAppLoaderDelegate>
 
 @property (nonatomic, weak) id<EXUpdatesAppControllerDelegate> delegate;
 @property (nonatomic, readonly) EXUpdatesAppLauncher *launcher;
