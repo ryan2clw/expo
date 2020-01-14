@@ -45,6 +45,15 @@ static NSString * const kEXUpdatesAppLoaderErrorDomain = @"EXUpdatesAppLoader";
   return self;
 }
 
+- (void)_reset
+{
+  _assetQueue = [NSMutableArray new];
+  _erroredAssets = [NSMutableArray new];
+  _finishedAssets = [NSMutableArray new];
+  _existingAssets = [NSMutableArray new];
+  _updateManifest = nil;
+}
+
 # pragma mark - subclass methods
 
 - (void)loadUpdateFromUrl:(NSURL *)url
@@ -168,6 +177,8 @@ static NSString * const kEXUpdatesAppLoaderErrorDomain = @"EXUpdatesAppLoader";
       [_delegate appLoader:self didFinishLoadingUpdate:_updateManifest];
     }
   }
+
+  [self _reset];
 }
 
 # pragma mark - helpers
