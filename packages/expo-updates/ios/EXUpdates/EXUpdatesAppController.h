@@ -33,7 +33,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)start;
 - (void)startAndShowLaunchScreen:(UIWindow *)window;
-- (BOOL)reloadBridge;
+- (BOOL)requestReload;
 - (NSURL * _Nullable)launchAssetUrl;
 
 @end

@@ -33,6 +33,8 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 @property (nonatomic, assign) BOOL isTimeoutFinished;
 @property (nonatomic, assign) BOOL hasLaunched;
 
+@property (nonatomic, assign) BOOL reloadRequested;
+
 @end
 
 @implementation EXUpdatesAppController
@@ -58,6 +60,7 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
     _isReadyToLaunch = NO;
     _isTimeoutFinished = NO;
     _hasLaunched = NO;
+    _reloadRequested = NO;
   }
   return self;
 }
@@ -107,10 +110,14 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
   [self start];
 }
 
-- (BOOL)reloadBridge
+- (BOOL)requestReload
 {
   if (_bridge) {
-    [_bridge reload];
+    [_database.lock lock];
+    _reloadRequested = YES;
+    _candidateLauncher = [[EXUpdatesAppLauncher alloc] init];
+    _candidateLauncher.delegate = self;
+    [_candidateLauncher launchUpdateWithSelectionPolicy:self->_selectionPolicy];
     return true;
   } else {
     NSLog(@"EXUpdatesAppController: Failed to reload because bridge was nil. Did you set the bridge property on the controller singleton?");
@@ -156,6 +163,12 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 - (void)_maybeFinish
 {
   NSAssert([NSThread isMainThread], @"EXUpdatesAppController:_maybeFinish should only be called on the main thread");
+  if (_reloadRequested && _bridge) {
+    _reloadRequested = NO;
+    [_database.lock unlock];
+    [_bridge reload];
+    return;
+  }
   if (!_isTimeoutFinished || !_isReadyToLaunch) {
     // too early, bail out
     return;
@@ -279,7 +292,7 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
   dispatch_async(dispatch_get_main_queue(), ^{
     if (success) {
       self->_isReadyToLaunch = YES;
-      if (!self->_hasLaunched) {
+      if (!self->_hasLaunched || self->_reloadRequested) {
         self->_launcher = appLauncher;
         [self _maybeFinish];
       }

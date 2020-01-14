@@ -46,7 +46,7 @@ UM_EXPORT_METHOD_AS(reload,
                     reloadAsync:(UMPromiseResolveBlock)resolve
                          reject:(UMPromiseRejectBlock)reject)
 {
-  BOOL success = [[EXUpdatesAppController sharedInstance] reloadBridge];
+  BOOL success = [[EXUpdatesAppController sharedInstance] requestReload];
   if (success) {
     resolve(nil);
   } else {
