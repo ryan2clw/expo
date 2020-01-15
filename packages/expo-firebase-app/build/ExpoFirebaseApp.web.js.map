@@ -1,0 +1,1 @@
+{"version":3,"file":"ExpoFirebaseApp.web.js","sourceRoot":"","sources":["../src/ExpoFirebaseApp.web.ts"],"names":[],"mappings":"AAAA,eAAe;IACb,IAAI,IAAI;QACN,OAAO,iBAAiB,CAAC;IAC3B,CAAC;CACF,CAAA","sourcesContent":["export default {\n  get name(): String {\n    return 'ExpoFirebaseApp';\n  }\n}\n"]}
