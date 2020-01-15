@@ -259,10 +259,12 @@ static NSString * const kEXUpdatesAppControllerErrorDomain = @"EXUpdatesAppContr
 
 - (void)_runReaperInBackground
 {
-  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
-    [EXUpdatesReaper reapUnusedUpdatesWithSelectionPolicy:self->_selectionPolicy
-                                           launchedUpdate:self->_launcher.launchedUpdate];
-  });
+  if (_launcher.launchedUpdate) {
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
+      [EXUpdatesReaper reapUnusedUpdatesWithSelectionPolicy:self->_selectionPolicy
+                                             launchedUpdate:self->_launcher.launchedUpdate];
+    });
+  }
 }
 
 - (void)_emergencyLaunchWithError:(NSError *)error

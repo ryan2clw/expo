@@ -118,7 +118,7 @@ static NSString * const kEXUpdatesAppLoaderErrorDomain = @"EXUpdatesAppLoader";
 - (void)handleAssetDownloadWithError:(NSError *)error asset:(EXUpdatesAsset *)asset
 {
   // TODO: retry. for now log an error
-  NSLog(@"error downloading file: %@: %@", [asset.url absoluteString], [error localizedDescription]);
+  NSLog(@"error loading file: %@: %@", [asset.url absoluteString], [error localizedDescription]);
   [_arrayLock lock];
   [self->_assetQueue removeObject:asset];
   [self->_erroredAssets addObject:asset];

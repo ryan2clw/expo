@@ -48,6 +48,7 @@ NSString * const kEXUpdatesEmbeddedBundleFileType = @"bundle";
   } else {
     NSAssert(asset.nsBundleFilename, @"embedded asset nsBundleFilename must be nonnull");
     NSString *bundlePath = [[NSBundle mainBundle] pathForResource:asset.nsBundleFilename ofType:asset.type];
+    NSAssert(bundlePath, @"NSBundle must contain the expected assets");
 
     NSError *err;
     if ([[NSFileManager defaultManager] copyItemAtPath:bundlePath toPath:[destinationUrl path] error:&err]) {
