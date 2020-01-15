@@ -23,16 +23,6 @@ NS_ASSUME_NONNULL_BEGIN
   return self;
 }
 
-/**
- * we expect the server to respond with a JSON object with the following fields:
- * id (UUID string)
- * commitTime (timestamp number)
- * binaryVersions (comma separated list - string)
- * bundleUrl (string)
- * metadata (arbitrary object)
- * assets (array of asset objects with `url` and `type` keys)
- */
-
 - (void)loadUpdateFromUrl:(NSURL *)url
 {
   [_downloader downloadManifestFromURL:url successBlock:^(EXUpdatesUpdate * _Nonnull update) {

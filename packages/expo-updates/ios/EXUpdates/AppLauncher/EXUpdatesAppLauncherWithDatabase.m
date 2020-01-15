@@ -40,7 +40,12 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
 + (EXUpdatesUpdate * _Nullable)launchableUpdateWithSelectionPolicy:(id<EXUpdatesSelectionPolicy>)selectionPolicy
 {
   EXUpdatesDatabase *database = [EXUpdatesAppController sharedInstance].database;
-  NSArray<EXUpdatesUpdate *>* launchableUpdates = [database launchableUpdates];
+  NSError *error;
+  NSArray<EXUpdatesUpdate *>* launchableUpdates = [database launchableUpdatesWithError:&error];
+  if (!launchableUpdates) {
+    NSLog(@"Could not select updates from database: %@", error.localizedDescription);
+    return nil;
+  }
   return [selectionPolicy launchableUpdateWithUpdates:launchableUpdates];
 }
 
@@ -135,7 +140,15 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
 {
   [_lock lock];
   _assetsToDownloadFinished++;
-  [[EXUpdatesAppController sharedInstance].database updateAsset:asset];
+
+  NSError *error;
+  [[EXUpdatesAppController sharedInstance].database updateAsset:asset error:&error];
+  if (error) {
+    [_lock unlock];
+    [self _assetDownloadDidError:error];
+    return;
+  }
+
   if (asset.isLaunchAsset) {
     _launchAssetUrl = localUrl;
   } else {
@@ -158,6 +171,7 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
     _completion = nil;
   }
   [_lock unlock];
+  NSLog(@"Failed to load missing asset: %@", error.localizedDescription);
 }
 
 @end

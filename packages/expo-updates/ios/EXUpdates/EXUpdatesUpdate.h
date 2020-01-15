@@ -20,7 +20,6 @@ typedef NS_ENUM(NSInteger, EXUpdatesUpdateStatus) {
 @property (nonatomic, strong, readonly) NSDictionary * _Nullable metadata;
 @property (nonatomic, assign, readonly) EXUpdatesUpdateStatus status;
 @property (nonatomic, assign, readonly) BOOL keep;
-@property (nonatomic, strong, readonly) NSURL *bundleUrl;
 @property (nonatomic, strong, readonly) NSArray<EXUpdatesAsset *>*assets;
 
 @property (nonatomic, strong, readonly) NSDictionary *rawManifest;

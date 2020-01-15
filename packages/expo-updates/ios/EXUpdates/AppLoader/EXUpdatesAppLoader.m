@@ -23,16 +23,6 @@ static NSString * const kEXUpdatesAppLoaderErrorDomain = @"EXUpdatesAppLoader";
 
 @implementation EXUpdatesAppLoader
 
-/**
- * we expect the server to respond with a JSON object with the following fields:
- * id (UUID string)
- * commitTime (timestamp number)
- * binaryVersions (comma separated list - string)
- * bundleUrl (string)
- * metadata (arbitrary object)
- * assets (array of asset objects with `url` and `type` keys)
- */
-
 - (instancetype)init
 {
   if (self = [super init]) {
@@ -81,7 +71,8 @@ static NSString * const kEXUpdatesAppLoaderErrorDomain = @"EXUpdatesAppLoader";
   [self _lockDatabase];
 
   EXUpdatesDatabase *database = [EXUpdatesAppController sharedInstance].database;
-  EXUpdatesUpdate *existingUpdate = [database updateWithId:updateManifest.updateId];
+  NSError *existingUpdateError;
+  EXUpdatesUpdate *existingUpdate = [database updateWithId:updateManifest.updateId error:&existingUpdateError];
   if (existingUpdate && existingUpdate.status == EXUpdatesUpdateStatusReady) {
     [self _unlockDatabase];
     [_delegate appLoader:self didFinishLoadingUpdate:updateManifest];
@@ -91,9 +82,18 @@ static NSString * const kEXUpdatesAppLoaderErrorDomain = @"EXUpdatesAppLoader";
       // however, it's not ready, so we should try to download all the assets again.
       _updateManifest = existingUpdate;
     } else {
+      if (existingUpdateError) {
+        NSLog(@"Failed to select old update from DB: %@", existingUpdateError.localizedDescription);
+      }
       // no update already exists with this ID, so we need to insert it and download everything.
       _updateManifest = updateManifest;
-      [database addUpdate:_updateManifest];
+      NSError *updateError;
+      [database addUpdate:_updateManifest error:&updateError];
+      
+      if (updateError) {
+        [self _finishWithError:updateError];
+        return;
+      }
     }
 
     _assetQueue = [_updateManifest.assets mutableCopy];
@@ -118,7 +118,7 @@ static NSString * const kEXUpdatesAppLoaderErrorDomain = @"EXUpdatesAppLoader";
 - (void)handleAssetDownloadWithError:(NSError *)error asset:(EXUpdatesAsset *)asset
 {
   // TODO: retry. for now log an error
-  NSLog(@"error loading file: %@: %@", [asset.url absoluteString], [error localizedDescription]);
+  NSLog(@"error loading file: %@: %@", asset.url.absoluteString, error.localizedDescription);
   [_arrayLock lock];
   [self->_assetQueue removeObject:asset];
   [self->_erroredAssets addObject:asset];
@@ -146,11 +146,21 @@ static NSString * const kEXUpdatesAppLoaderErrorDomain = @"EXUpdatesAppLoader";
 
 # pragma mark - internal
 
+- (void)_finishWithError:(NSError *)error
+{
+  [self _unlockDatabase];
+  if (_delegate) {
+    [_delegate appLoader:self didFailWithError:error];
+  }
+  [self _reset];
+}
+
 - (void)_finish
 {
   EXUpdatesDatabase *database = [EXUpdatesAppController sharedInstance].database;
   for (EXUpdatesAsset *existingAsset in _existingAssets) {
-    BOOL existingAssetFound = [database addExistingAsset:existingAsset toUpdateWithId:_updateManifest.updateId];
+    NSError *error;
+    BOOL existingAssetFound = [database addExistingAsset:existingAsset toUpdateWithId:_updateManifest.updateId error:&error];
     if (!existingAssetFound) {
       // the database and filesystem have gotten out of sync
       // do our best to create a new entry for this file even though it already existed on disk
@@ -158,11 +168,24 @@ static NSString * const kEXUpdatesAppLoaderErrorDomain = @"EXUpdatesAppLoader";
       existingAsset.data = [NSData dataWithContentsOfURL:[[EXUpdatesAppController sharedInstance].updatesDirectory URLByAppendingPathComponent:existingAsset.filename]];
       [_finishedAssets addObject:existingAsset];
     }
+    if (error) {
+      NSLog(@"Error searching for existing asset in DB: %@", error.localizedDescription);
+    }
   }
-  [database addNewAssets:_finishedAssets toUpdateWithId:_updateManifest.updateId];
+  NSError *assetError;
+  [database addNewAssets:_finishedAssets toUpdateWithId:_updateManifest.updateId error:&assetError];
+  if (assetError) {
+    [self _finishWithError:assetError];
+    return;
+  }
 
   if (![_erroredAssets count]) {
-    [database markUpdateReadyWithId:_updateManifest.updateId];
+    NSError *updateReadyError;
+    [database markUpdateReadyWithId:_updateManifest.updateId error:&updateReadyError];
+    if (updateReadyError) {
+      [self _finishWithError:updateReadyError];
+      return;
+    }
   }
   [self _unlockDatabase];
 

@@ -22,6 +22,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong, readwrite) NSDictionary *rawManifest;
 
+@property (nonatomic, strong) NSURL *bundledAssetBaseUrl;
+
 @end
 
 @implementation EXUpdatesUpdate
@@ -30,6 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
 {
   if (self = [super init]) {
     _rawManifest = manifest;
+    _bundledAssetBaseUrl = [NSURL URLWithString:@"https://d1wp6m56sqw74a.cloudfront.net/~assets/"];
   }
   return self;
 }
@@ -188,7 +191,7 @@ binaryVersions:(NSString *)binaryVersions
       type = [bundledAsset substringFromIndex:extensionStartRange.location + 1];
     }
 
-    NSURL *url = [[[self class] bundledAssetBaseUrl] URLByAppendingPathComponent:hash];
+    NSURL *url = [update.bundledAssetBaseUrl URLByAppendingPathComponent:hash];
 
     EXUpdatesAsset *asset = [[EXUpdatesAsset alloc] initWithUrl:url type:(NSString *)type];
     asset.nsBundleFilename = filename;
@@ -211,25 +214,13 @@ binaryVersions:(NSString *)binaryVersions
   return update;
 }
 
-+ (NSURL *)bundledAssetBaseUrl
-{
-  return [NSURL URLWithString:@"https://d1wp6m56sqw74a.cloudfront.net/~assets/"];
-}
-
-- (NSURL *)bundleUrl
-{
-  if (!_bundleUrl) {
-    EXUpdatesDatabase *db = [EXUpdatesAppController sharedInstance].database;
-    _bundleUrl = [db launchAssetWithUpdateId:_updateId].url;
-  }
-  return _bundleUrl;
-}
-
 - (NSArray<EXUpdatesAsset *>*)assets
 {
   if (!_assets) {
     EXUpdatesDatabase *db = [EXUpdatesAppController sharedInstance].database;
-    _assets = [db assetsWithUpdateId:_updateId];
+    NSError *error;
+    _assets = [db assetsWithUpdateId:_updateId error:&error];
+    NSAssert(_assets, @"Assets should be nonnull when selected from DB: %@", error.localizedDescription);
   }
   return _assets;
 }
