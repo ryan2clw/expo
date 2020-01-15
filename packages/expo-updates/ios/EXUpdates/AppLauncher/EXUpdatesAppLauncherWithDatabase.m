@@ -5,6 +5,7 @@
 #import <EXUpdates/EXUpdatesAppLoaderEmbedded.h>
 #import <EXUpdates/EXUpdatesDatabase.h>
 #import <EXUpdates/EXUpdatesFileDownloader.h>
+#import <EXUpdates/EXUpdatesUtils.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -116,8 +117,10 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
     // so we need to attempt to download it
     _assetsToDownload++;
     [self.downloader downloadFileFromURL:asset.url toPath:[assetLocalUrl path] successBlock:^(NSData * _Nonnull data, NSURLResponse * _Nonnull response) {
-      asset.data = data;
-      asset.response = response;
+      if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
+        asset.headers = ((NSHTTPURLResponse *)response).allHeaderFields;
+      }
+      asset.contentHash = [EXUpdatesUtils sha1WithData:data];
       asset.downloadTime = [NSDate date];
       [self _assetDownloadDidFinish:asset withLocalUrl:assetLocalUrl];
     } errorBlock:^(NSError * _Nonnull error, NSURLResponse * _Nonnull response) {

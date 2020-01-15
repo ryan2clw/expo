@@ -133,8 +133,10 @@ static NSString * const kEXUpdatesAppLoaderErrorDomain = @"EXUpdatesAppLoader";
   [_arrayLock lock];
   [self->_assetQueue removeObject:asset];
 
-  asset.data = data;
-  asset.response = response;
+  if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
+    asset.headers = ((NSHTTPURLResponse *)response).allHeaderFields;
+  }
+  asset.contentHash = [EXUpdatesUtils sha1WithData:data];
   asset.downloadTime = [NSDate date];
   [self->_finishedAssets addObject:asset];
 
@@ -164,8 +166,9 @@ static NSString * const kEXUpdatesAppLoaderErrorDomain = @"EXUpdatesAppLoader";
     if (!existingAssetFound) {
       // the database and filesystem have gotten out of sync
       // do our best to create a new entry for this file even though it already existed on disk
+      NSData *contents = [NSData dataWithContentsOfURL:[[EXUpdatesAppController sharedInstance].updatesDirectory URLByAppendingPathComponent:existingAsset.filename]];
+      existingAsset.contentHash = [EXUpdatesUtils sha1WithData:contents];
       existingAsset.downloadTime = [NSDate date];
-      existingAsset.data = [NSData dataWithContentsOfURL:[[EXUpdatesAppController sharedInstance].updatesDirectory URLByAppendingPathComponent:existingAsset.filename]];
       [_finishedAssets addObject:existingAsset];
     }
     if (error) {
