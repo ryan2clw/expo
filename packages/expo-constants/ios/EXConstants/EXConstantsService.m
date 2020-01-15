@@ -10,6 +10,8 @@
 @interface EXConstantsService ()
 
 @property (nonatomic, strong) NSString *sessionId;
+@property (nonatomic, strong) NSDictionary *googleServicesFile;
+@property (nonatomic, assign) BOOL isGoogleServicesFileInitialized;
 
 @end
 
@@ -33,7 +35,7 @@ UM_REGISTER_MODULE();
   isDebugXCodeScheme = YES;
 #endif
 
-  return @{
+  NSDictionary *constants = @{
            @"sessionId": _sessionId,
            @"statusBarHeight": @([self statusBarHeight]),
            @"deviceYearClass": [[self class] deviceYear],
@@ -52,8 +54,20 @@ UM_REGISTER_MODULE();
                    @"userInterfaceIdiom": [self userInterfaceIdiom],
                    @"systemVersion": [self iosVersion],
                    },
-               },
-           };
+               }
+  };
+    
+  if (!_isGoogleServicesFileInitialized) {
+    _googleServicesFile = [self googleServicesFile];
+    _isGoogleServicesFileInitialized = YES;
+  }
+  if (_googleServicesFile) {
+    NSMutableDictionary *mutableConstants = [constants mutableCopy];
+    [mutableConstants setValue:_googleServicesFile forKey:@"googleServicesFile"];
+    constants = mutableConstants;
+  }
+    
+  return constants;
 }
 
 - (NSString *)appVersion
@@ -112,6 +126,16 @@ UM_REGISTER_MODULE();
     [fontNames addObjectsFromArray:[UIFont fontNamesForFamilyName:familyName]];
   }
   return [fontNames sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
+}
+
+- (nullable NSDictionary*)googleServicesFile
+{
+    NSString *path = [[NSBundle mainBundle] pathForResource:@"GoogleService-Info" ofType:@"plist"];
+    if (!path) {
+        return @{};
+    }
+    NSDictionary *plist = [[NSDictionary alloc] initWithContentsOfFile:path];
+    return plist;
 }
 
 # pragma mark - device info

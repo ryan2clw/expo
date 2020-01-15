@@ -64,4 +64,23 @@
   }
 }
 
+- (nullable NSDictionary*)googleServicesFile
+{
+  // use GoogleService-Info.plist that is shipped with the app
+  // in all cases, except in the standard Expo client
+  if (![_appOwnership isEqualToString:@"expo"]) {
+    return [super googleServicesFile];
+  }
+  
+  // load GoogleService-Info.plist from manifest
+  NSDictionary* manifest = _unversionedConstants[@"manifest"];
+  NSDictionary* ios = manifest ? manifest[@"ios"] : nil;
+  NSString* googleServicesFile = ios ? ios[@"googleServicesFile"] : nil;
+  if (!googleServicesFile) return nil;
+  NSData *data = [[NSData alloc] initWithBase64EncodedString:googleServicesFile options:0];
+  NSError* error;
+  NSDictionary* plist = [NSPropertyListSerialization propertyListWithData:data options:NSPropertyListImmutable format:nil error:&error];
+  return plist;
+}
+
 @end
