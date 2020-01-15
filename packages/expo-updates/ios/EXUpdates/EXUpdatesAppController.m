@@ -142,7 +142,7 @@ static NSString * const kEXUpdatesAppControllerErrorDomain = @"EXUpdatesAppContr
   [self start];
 }
 
-- (BOOL)requestReload
+- (BOOL)requestRelaunch
 {
   if (_bridge) {
     [_database.lock lock];
@@ -154,6 +154,7 @@ static NSString * const kEXUpdatesAppControllerErrorDomain = @"EXUpdatesAppContr
           self->_launcher = self->_candidateLauncher;
           [self->_database.lock unlock];
           [self->_bridge reload];
+          [self _runReaperInBackground];
         });
       }
     }];

@@ -35,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)start;
 - (void)startAndShowLaunchScreen:(UIWindow *)window;
-- (BOOL)requestReload;
+- (BOOL)requestRelaunch;
 
 @end
 
