@@ -1,5 +1,6 @@
 //  Copyright © 2019 650 Industries. All rights reserved.
 
+#import <EXUpdates/EXUpdatesConfig.h>
 #import <EXUpdates/EXUpdatesSelectionPolicyNewest.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -12,7 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
   NSDate *runnableUpdateCommitTime;
   for (EXUpdatesUpdate *update in updates) {
     NSArray<NSString *>*compatibleBinaryVersions = [update.binaryVersions componentsSeparatedByString:@","];
-    if (![compatibleBinaryVersions containsObject:[self binaryVersion]]) {
+    if (![compatibleBinaryVersions containsObject:[self runtimeVersion]]) {
       continue;
     }
     NSDate *commitTime = update.commitTime;
@@ -50,9 +51,9 @@ NS_ASSUME_NONNULL_BEGIN
   return [launchedUpdate.commitTime compare:newUpdate.commitTime] == NSOrderedAscending;
 }
 
-- (NSString *)binaryVersion
+- (NSString *)runtimeVersion
 {
-  return [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
+  return [EXUpdatesConfig sharedInstance].runtimeVersion ?: [EXUpdatesConfig sharedInstance].sdkVersion;
 }
 
 @end
