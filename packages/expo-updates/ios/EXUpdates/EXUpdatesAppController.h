@@ -1,6 +1,5 @@
 //  Copyright © 2019 650 Industries. All rights reserved.
 
-#import <EXUpdates/EXUpdatesAppLauncher.h>
 #import <EXUpdates/EXUpdatesAppLoader.h>
 #import <EXUpdates/EXUpdatesAppLoaderEmbedded.h>
 #import <EXUpdates/EXUpdatesDatabase.h>
@@ -30,6 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) id<EXUpdatesSelectionPolicy> selectionPolicy;
 @property (nonatomic, readonly) NSURL *updatesDirectory;
 @property (nonatomic, readonly, assign) BOOL isEnabled;
+@property (nonatomic, readonly, assign) BOOL isEmergencyLaunch;
 
 + (instancetype)sharedInstance;
 

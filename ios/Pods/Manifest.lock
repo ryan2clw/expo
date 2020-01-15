@@ -2377,8 +2377,6 @@ SPEC REPOS:
   https://cdn.cocoapods.org/:
     - Amplitude-iOS
     - boost-for-react-native
-    - Google-Maps-iOS-Utils
-    - GoogleMaps
     - JKBigInteger2
     - lottie-ios
   https://github.com/cocoapods/specs.git:

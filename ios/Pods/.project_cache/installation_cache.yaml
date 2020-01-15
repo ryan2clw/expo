@@ -6531,7 +6531,10 @@ CACHE_KEYS:
     CHECKSUM: b61ea62926d7a3a0927611f08bf7aac0332f3b40
     FILES:
       - "/Users/eric/expo/expo/packages/expo-updates/ios/EXUpdates/AppLauncher/EXUpdatesAppLauncher.h"
-      - "/Users/eric/expo/expo/packages/expo-updates/ios/EXUpdates/AppLauncher/EXUpdatesAppLauncher.m"
+      - "/Users/eric/expo/expo/packages/expo-updates/ios/EXUpdates/AppLauncher/EXUpdatesAppLauncherEmergency.h"
+      - "/Users/eric/expo/expo/packages/expo-updates/ios/EXUpdates/AppLauncher/EXUpdatesAppLauncherEmergency.m"
+      - "/Users/eric/expo/expo/packages/expo-updates/ios/EXUpdates/AppLauncher/EXUpdatesAppLauncherWithDatabase.h"
+      - "/Users/eric/expo/expo/packages/expo-updates/ios/EXUpdates/AppLauncher/EXUpdatesAppLauncherWithDatabase.m"
       - "/Users/eric/expo/expo/packages/expo-updates/ios/EXUpdates/AppLauncher/EXUpdatesSelectionPolicy.h"
       - "/Users/eric/expo/expo/packages/expo-updates/ios/EXUpdates/AppLauncher/EXUpdatesSelectionPolicyNewest.h"
       - "/Users/eric/expo/expo/packages/expo-updates/ios/EXUpdates/AppLauncher/EXUpdatesSelectionPolicyNewest.m"

@@ -1,14 +1,14 @@
 //  Copyright © 2019 650 Industries. All rights reserved.
 
 #import <EXUpdates/EXUpdatesAppController.h>
-#import <EXUpdates/EXUpdatesAppLauncher.h>
+#import <EXUpdates/EXUpdatesAppLauncherWithDatabase.h>
 #import <EXUpdates/EXUpdatesAppLoaderEmbedded.h>
 #import <EXUpdates/EXUpdatesDatabase.h>
 #import <EXUpdates/EXUpdatesFileDownloader.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface EXUpdatesAppLauncher ()
+@interface EXUpdatesAppLauncherWithDatabase ()
 
 @property (nonatomic, strong, readwrite) EXUpdatesUpdate * _Nullable launchedUpdate;
 @property (nonatomic, strong, readwrite) NSURL * _Nullable launchAssetUrl;
@@ -25,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
 
-@implementation EXUpdatesAppLauncher
+@implementation EXUpdatesAppLauncherWithDatabase
 
 - (instancetype)init
 {

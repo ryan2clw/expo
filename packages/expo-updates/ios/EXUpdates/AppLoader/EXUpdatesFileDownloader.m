@@ -1,5 +1,6 @@
 //  Copyright © 2019 650 Industries. All rights reserved.
 
+#import <EXUpdates/EXUpdatesAppLauncherEmergency.h>
 #import <EXUpdates/EXUpdatesConfig.h>
 #import <EXUpdates/EXUpdatesCrypto.h>
 #import <EXUpdates/EXUpdatesFileDownloader.h>
@@ -161,6 +162,17 @@ NSTimeInterval const kEXUpdatesDefaultTimeoutInterval = 60;
     [request setValue:runtimeVersion forHTTPHeaderField:@"Expo-Runtime-Version"];
   } else {
     [request setValue:[EXUpdatesConfig sharedInstance].sdkVersion forHTTPHeaderField:@"Expo-SDK-Version"];
+  }
+
+  NSString *previousFatalError = [EXUpdatesAppLauncherEmergency consumeError];
+  if (previousFatalError) {
+    // some servers can have max length restrictions for headers,
+    // so we restrict the length of the string to 1024 characters --
+    // this should satisfy the requirements of most servers
+    if ([previousFatalError length] > 1024) {
+      previousFatalError = [previousFatalError substringToIndex:1024];
+    }
+    [request setValue:previousFatalError forHTTPHeaderField:@"Expo-Fatal-Error"];
   }
 }
 

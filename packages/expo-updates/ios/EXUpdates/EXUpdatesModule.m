@@ -1,7 +1,6 @@
 // Copyright 2019 650 Industries. All rights reserved.
 
 #import <EXUpdates/EXUpdatesAppController.h>
-#import <EXUpdates/EXUpdatesAppLauncher.h>
 #import <EXUpdates/EXUpdatesAppLoaderRemote.h>
 #import <EXUpdates/EXUpdatesConfig.h>
 #import <EXUpdates/EXUpdatesDatabase.h>
@@ -36,7 +35,8 @@ UM_EXPORT_MODULE(ExpoUpdates);
   } else {
     return @{
       @"manifest": launchedUpdate.rawManifest,
-      @"localAssets": controller.assetFilesMap ?: @{}
+      @"localAssets": controller.assetFilesMap ?: @{},
+      @"isEmergencyLaunch": @(controller.isEmergencyLaunch)
     };
   }
   

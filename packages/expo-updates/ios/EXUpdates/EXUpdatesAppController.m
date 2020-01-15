@@ -2,6 +2,9 @@
 
 #import <EXUpdates/EXUpdatesConfig.h>
 #import <EXUpdates/EXUpdatesAppController.h>
+#import <EXUpdates/EXUpdatesAppLauncher.h>
+#import <EXUpdates/EXUpdatesAppLauncherEmergency.h>
+#import <EXUpdates/EXUpdatesAppLauncherWithDatabase.h>
 #import <EXUpdates/EXUpdatesAppLoaderEmbedded.h>
 #import <EXUpdates/EXUpdatesAppLoaderRemote.h>
 #import <EXUpdates/EXUpdatesReaper.h>
@@ -15,10 +18,11 @@ static NSString * const kEXUpdatesEventName = @"Expo.nativeUpdatesEvent";
 static NSString * const kEXUpdatesUpdateAvailableEventName = @"updateAvailable";
 static NSString * const kEXUpdatesNoUpdateAvailableEventName = @"noUpdateAvailable";
 static NSString * const kEXUpdatesErrorEventName = @"error";
+static NSString * const kEXUpdatesAppControllerErrorDomain = @"EXUpdatesAppController";
 
 @interface EXUpdatesAppController ()
 
-@property (nonatomic, readwrite, strong) EXUpdatesAppLauncher *launcher;
+@property (nonatomic, readwrite, strong) id<EXUpdatesAppLauncher> launcher;
 @property (nonatomic, readwrite, strong) EXUpdatesDatabase *database;
 @property (nonatomic, readwrite, strong) id<EXUpdatesSelectionPolicy> selectionPolicy;
 @property (nonatomic, readwrite, strong) EXUpdatesAppLoaderEmbedded *embeddedAppLoader;
@@ -27,11 +31,13 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 @property (nonatomic, readwrite, strong) NSURL *updatesDirectory;
 @property (nonatomic, readwrite, assign) BOOL isEnabled;
 
-@property (nonatomic, strong) EXUpdatesAppLauncher *candidateLauncher;
+@property (nonatomic, strong) id<EXUpdatesAppLauncher> candidateLauncher;
 @property (nonatomic, strong) NSTimer *timer;
 @property (nonatomic, assign) BOOL isReadyToLaunch;
 @property (nonatomic, assign) BOOL isTimerFinished;
 @property (nonatomic, assign) BOOL hasLaunched;
+
+@property (nonatomic, assign) BOOL isEmergencyLaunch;
 
 @end
 
@@ -65,7 +71,17 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 - (void)start
 {
   _isEnabled = YES;
-  [_database openDatabaseWithError:nil];
+  NSError *fsError = [self _initializeUpdatesDirectory];
+  if (fsError) {
+    [self _emergencyLaunchWithError:fsError];
+    return;
+  }
+
+  NSError *dbError;
+  if (![_database openDatabaseWithError:&dbError]) {
+    [self _emergencyLaunchWithError:dbError];
+    return;
+  }
 
   NSNumber *launchWaitMs = [EXUpdatesConfig sharedInstance].launchWaitMs;
   if ([launchWaitMs isEqualToNumber:@(0)]) {
@@ -78,8 +94,9 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 
   [self _maybeLoadEmbeddedUpdate];
 
-  _launcher = [[EXUpdatesAppLauncher alloc] init];
-  [_launcher launchUpdateWithSelectionPolicy:_selectionPolicy completion:^(BOOL success) {
+  EXUpdatesAppLauncherWithDatabase *launcher = [[EXUpdatesAppLauncherWithDatabase alloc] init];
+  _launcher = launcher;
+  [launcher launchUpdateWithSelectionPolicy:_selectionPolicy completion:^(BOOL success) {
     dispatch_async(dispatch_get_main_queue(), ^{
       if (success) {
         self->_isReadyToLaunch = YES;
@@ -93,7 +110,9 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
           [self _runReaperInBackground];
         }
       } else {
-        // TODO: emergency launch
+        [self _emergencyLaunchWithError:[NSError errorWithDomain:kEXUpdatesAppControllerErrorDomain
+                                                            code:-1
+                                                        userInfo:@{NSLocalizedDescriptionKey: @"Failed to find or load launch asset"}]];
       }
     });
   }];
@@ -127,8 +146,9 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 {
   if (_bridge) {
     [_database.lock lock];
-    _candidateLauncher = [[EXUpdatesAppLauncher alloc] init];
-    [_candidateLauncher launchUpdateWithSelectionPolicy:self->_selectionPolicy completion:^(BOOL success) {
+    EXUpdatesAppLauncherWithDatabase *launcher = [[EXUpdatesAppLauncherWithDatabase alloc] init];
+    _candidateLauncher = launcher;
+    [launcher launchUpdateWithSelectionPolicy:self->_selectionPolicy completion:^(BOOL success) {
       if (success) {
         dispatch_async(dispatch_get_main_queue(), ^{
           self->_launcher = self->_candidateLauncher;
@@ -159,34 +179,6 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
   return _launcher.assetFilesMap ?: nil;
 }
 
-- (NSURL *)updatesDirectory
-{
-  if (!_updatesDirectory) {
-    NSFileManager *fileManager = NSFileManager.defaultManager;
-    NSURL *applicationDocumentsDirectory = [[fileManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask] lastObject];
-    _updatesDirectory = [applicationDocumentsDirectory URLByAppendingPathComponent:@".expo-internal"];
-    NSString *updatesDirectoryPath = [_updatesDirectory path];
-
-    BOOL isDir;
-    BOOL exists = [fileManager fileExistsAtPath:updatesDirectoryPath isDirectory:&isDir];
-    if (!exists || !isDir) {
-      if (!isDir) {
-        NSError *err;
-        BOOL wasRemoved = [fileManager removeItemAtPath:updatesDirectoryPath error:&err];
-        if (!wasRemoved) {
-          // TODO: handle error
-        }
-      }
-      NSError *err;
-      BOOL wasCreated = [fileManager createDirectoryAtPath:updatesDirectoryPath withIntermediateDirectories:YES attributes:nil error:&err];
-      if (!wasCreated) {
-        // TODO: handle error
-      }
-    }
-  }
-  return _updatesDirectory;
-}
-
 # pragma mark - internal
 
 - (void)_maybeFinish
@@ -214,10 +206,40 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
   [self _maybeFinish];
 }
 
+- (NSError * _Nullable)_initializeUpdatesDirectory
+{
+  NSAssert(!_updatesDirectory, @"EXUpdatesAppController:_initializeUpdatesDirectory should only be called once per instance");
+
+  NSFileManager *fileManager = NSFileManager.defaultManager;
+  NSURL *applicationDocumentsDirectory = [[fileManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask] lastObject];
+  NSURL *updatesDirectory = [applicationDocumentsDirectory URLByAppendingPathComponent:@".expo-internal"];
+  NSString *updatesDirectoryPath = [_updatesDirectory path];
+
+  BOOL isDir;
+  BOOL exists = [fileManager fileExistsAtPath:updatesDirectoryPath isDirectory:&isDir];
+  if (!exists || !isDir) {
+    if (!isDir) {
+      NSError *err;
+      BOOL wasRemoved = [fileManager removeItemAtPath:updatesDirectoryPath error:&err];
+      if (!wasRemoved) {
+        return err;
+      }
+    }
+    NSError *err;
+    BOOL wasCreated = [fileManager createDirectoryAtPath:updatesDirectoryPath withIntermediateDirectories:YES attributes:nil error:&err];
+    if (!wasCreated) {
+      return err;
+    }
+  }
+
+  _updatesDirectory = updatesDirectory;
+  return nil;
+}
+
 - (void)_maybeLoadEmbeddedUpdate
 {
   if ([_selectionPolicy shouldLoadNewUpdate:[EXUpdatesAppLoaderEmbedded embeddedManifest]
-                         withLaunchedUpdate:[EXUpdatesAppLauncher launchableUpdateWithSelectionPolicy:_selectionPolicy]]) {
+                         withLaunchedUpdate:[EXUpdatesAppLauncherWithDatabase launchableUpdateWithSelectionPolicy:_selectionPolicy]]) {
     _embeddedAppLoader = [[EXUpdatesAppLoaderEmbedded alloc] init];
     [_embeddedAppLoader loadUpdateFromEmbeddedManifest];
   }
@@ -240,6 +262,24 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
     [EXUpdatesReaper reapUnusedUpdatesWithSelectionPolicy:self->_selectionPolicy
                                            launchedUpdate:self->_launcher.launchedUpdate];
   });
+}
+
+- (void)_emergencyLaunchWithError:(NSError *)error
+{
+  if (_timer) {
+    [_timer invalidate];
+  }
+
+  _isEmergencyLaunch = YES;
+  _hasLaunched = YES;
+
+  EXUpdatesAppLauncherEmergency *launcher = [[EXUpdatesAppLauncherEmergency alloc] init];
+  _launcher = launcher;
+  [launcher launchUpdateWithFatalError:error];
+
+  if (self->_delegate) {
+    [self->_delegate appController:self didStartWithSuccess:YES];
+  }
 }
 
 + (BOOL)_shouldCheckForUpdate
@@ -285,8 +325,9 @@ static NSString * const kEXUpdatesErrorEventName = @"error";
 
     if (update) {
       if (!self->_hasLaunched) {
-        self->_candidateLauncher = [[EXUpdatesAppLauncher alloc] init];
-        [self->_candidateLauncher launchUpdateWithSelectionPolicy:self->_selectionPolicy completion:^(BOOL success) {
+        EXUpdatesAppLauncherWithDatabase *launcher = [[EXUpdatesAppLauncherWithDatabase alloc] init];
+        self->_candidateLauncher = launcher;
+        [launcher launchUpdateWithSelectionPolicy:self->_selectionPolicy completion:^(BOOL success) {
           if (success) {
             dispatch_async(dispatch_get_main_queue(), ^{
               if (!self->_hasLaunched) {
