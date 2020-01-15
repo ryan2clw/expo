@@ -17,6 +17,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong) NSLock *arrayLock;
 
+@property (nonatomic, strong) dispatch_queue_t databaseLockThread;
+
 @end
 
 static NSString * const kEXUpdatesAppLoaderErrorDomain = @"EXUpdatesAppLoader";
@@ -31,6 +33,7 @@ static NSString * const kEXUpdatesAppLoaderErrorDomain = @"EXUpdatesAppLoader";
     _finishedAssets = [NSMutableArray new];
     _existingAssets = [NSMutableArray new];
     _arrayLock = [[NSLock alloc] init];
+    _databaseLockThread = dispatch_queue_create("expo.database.LockQueue", DISPATCH_QUEUE_SERIAL);
   }
   return self;
 }
@@ -211,24 +214,16 @@ static NSString * const kEXUpdatesAppLoaderErrorDomain = @"EXUpdatesAppLoader";
 
 - (void)_lockDatabase
 {
-  if ([NSThread isMainThread]) {
+  dispatch_sync(_databaseLockThread, ^{
     [[EXUpdatesAppController sharedInstance].database.lock lock];
-  } else {
-    dispatch_sync(dispatch_get_main_queue(), ^{
-      [[EXUpdatesAppController sharedInstance].database.lock lock];
-    });
-  }
+  });
 }
 
 - (void)_unlockDatabase
 {
-  if ([NSThread isMainThread]) {
+  dispatch_sync(_databaseLockThread, ^{
     [[EXUpdatesAppController sharedInstance].database.lock unlock];
-  } else {
-    dispatch_sync(dispatch_get_main_queue(), ^{
-      [[EXUpdatesAppController sharedInstance].database.lock unlock];
-    });
-  }
+  });
 }
 
 @end
