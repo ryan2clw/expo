@@ -214,12 +214,12 @@ static NSString * const kEXUpdatesAppControllerErrorDomain = @"EXUpdatesAppContr
   NSFileManager *fileManager = NSFileManager.defaultManager;
   NSURL *applicationDocumentsDirectory = [[fileManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask] lastObject];
   NSURL *updatesDirectory = [applicationDocumentsDirectory URLByAppendingPathComponent:@".expo-internal"];
-  NSString *updatesDirectoryPath = [_updatesDirectory path];
+  NSString *updatesDirectoryPath = [updatesDirectory path];
 
   BOOL isDir;
   BOOL exists = [fileManager fileExistsAtPath:updatesDirectoryPath isDirectory:&isDir];
   if (!exists || !isDir) {
-    if (!isDir) {
+    if (exists && !isDir) {
       NSError *err;
       BOOL wasRemoved = [fileManager removeItemAtPath:updatesDirectoryPath error:&err];
       if (!wasRemoved) {
