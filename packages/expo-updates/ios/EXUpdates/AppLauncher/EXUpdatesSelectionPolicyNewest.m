@@ -12,8 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
   EXUpdatesUpdate *runnableUpdate;
   NSDate *runnableUpdateCommitTime;
   for (EXUpdatesUpdate *update in updates) {
-    NSArray<NSString *>*compatibleBinaryVersions = [update.binaryVersions componentsSeparatedByString:@","];
-    if (![compatibleBinaryVersions containsObject:[self runtimeVersion]]) {
+    if (![[self runtimeVersion] isEqualToString:update.runtimeVersion]) {
       continue;
     }
     NSDate *commitTime = update.commitTime;

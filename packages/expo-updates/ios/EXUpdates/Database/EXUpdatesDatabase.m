@@ -97,7 +97,7 @@ static NSString * const kEXUpdatesDatabaseFilename = @"updates.db";
    CREATE TABLE \"updates\" (\
    \"id\"  BLOB UNIQUE,\
    \"commit_time\"  INTEGER NOT NULL UNIQUE,\
-   \"binary_versions\"  TEXT NOT NULL,\
+   \"runtime_version\"  TEXT NOT NULL,\
    \"launch_asset_id\" INTEGER,\
    \"metadata\"  TEXT,\
    \"status\"  INTEGER NOT NULL,\
@@ -141,14 +141,14 @@ static NSString * const kEXUpdatesDatabaseFilename = @"updates.db";
 
 - (void)addUpdate:(EXUpdatesUpdate *)update error:(NSError ** _Nullable)error
 {
-  NSString * const sql = @"INSERT INTO \"updates\" (\"id\", \"commit_time\", \"binary_versions\", \"metadata\", \"status\" , \"keep\")\
+  NSString * const sql = @"INSERT INTO \"updates\" (\"id\", \"commit_time\", \"runtime_version\", \"metadata\", \"status\" , \"keep\")\
   VALUES (?1, ?2, ?3, ?4, ?5, 1);";
 
   [self _executeSql:sql
            withArgs:@[
                       update.updateId,
                       @([update.commitTime timeIntervalSince1970] * 1000),
-                      update.binaryVersions,
+                      update.runtimeVersion,
                       update.metadata ?: [NSNull null],
                       @(EXUpdatesUpdateStatusPending)
                       ]
@@ -568,7 +568,7 @@ static NSString * const kEXUpdatesDatabaseFilename = @"updates.db";
   NSAssert(!error && metadata && [metadata isKindOfClass:[NSDictionary class]], @"Update metadata should be a valid JSON object");
   EXUpdatesUpdate *update = [EXUpdatesUpdate updateWithId:row[@"id"]
                                                commitTime:[NSDate dateWithTimeIntervalSince1970:[(NSNumber *)row[@"commit_time"] doubleValue] / 1000]
-                                           binaryVersions:row[@"binary_versions"]
+                                           runtimeVersion:row[@"runtime_version"]
                                                  metadata:metadata
                                                    status:(EXUpdatesUpdateStatus)[(NSNumber *)row[@"status"] integerValue]
                                                      keep:[(NSNumber *)row[@"keep"] boolValue]];

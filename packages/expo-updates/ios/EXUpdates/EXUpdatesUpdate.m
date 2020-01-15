@@ -13,7 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong, readwrite) NSUUID *updateId;
 @property (nonatomic, strong, readwrite) NSDate *commitTime;
-@property (nonatomic, strong, readwrite) NSString *binaryVersions;
+@property (nonatomic, strong, readwrite) NSString *runtimeVersion;
 @property (nonatomic, strong, readwrite) NSDictionary * _Nullable metadata;
 @property (nonatomic, assign, readwrite) EXUpdatesUpdateStatus status;
 @property (nonatomic, assign, readwrite) BOOL keep;
@@ -39,7 +39,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (instancetype)updateWithId:(NSUUID *)updateId
     commitTime:(NSDate *)commitTime
-binaryVersions:(NSString *)binaryVersions
+runtimeVersion:(NSString *)runtimeVersion
       metadata:(NSDictionary * _Nullable)metadata
         status:(EXUpdatesUpdateStatus)status
           keep:(BOOL)keep
@@ -48,7 +48,7 @@ binaryVersions:(NSString *)binaryVersions
   EXUpdatesUpdate *update = [[self alloc] _initWithRawManifest:metadata];
   update.updateId = updateId;
   update.commitTime = commitTime;
-  update.binaryVersions = binaryVersions;
+  update.runtimeVersion = runtimeVersion;
   update.metadata = metadata;
   update.status = status;
   update.keep = keep;
@@ -61,14 +61,14 @@ binaryVersions:(NSString *)binaryVersions
 
   id updateId = bareManifest[@"id"];
   id commitTime = bareManifest[@"commitTime"];
-  id binaryVersions = bareManifest[@"binaryVersions"];
+  id runtimeVersion = bareManifest[@"runtimeVersion"];
   id metadata = bareManifest[@"metadata"];
   id bundleUrlString = bareManifest[@"bundleUrl"];
   id assets = bareManifest[@"assets"];
 
   NSAssert([updateId isKindOfClass:[NSString class]], @"update ID should be a string");
   NSAssert([commitTime isKindOfClass:[NSNumber class]], @"commitTime should be a number");
-  NSAssert([binaryVersions isKindOfClass:[NSString class]], @"binaryVersions should be a string");
+  NSAssert([runtimeVersion isKindOfClass:[NSString class]], @"runtimeVersion should be a string");
   NSAssert(!metadata || [metadata isKindOfClass:[NSDictionary class]], @"metadata should be null or an object");
   NSAssert([bundleUrlString isKindOfClass:[NSString class]], @"bundleUrl should be a string");
   NSAssert(assets && [assets isKindOfClass:[NSArray class]], @"assets should be a nonnull array");
@@ -119,7 +119,7 @@ binaryVersions:(NSString *)binaryVersions
 
   update.updateId = uuid;
   update.commitTime = [NSDate dateWithTimeIntervalSince1970:[(NSNumber *)commitTime doubleValue] / 1000];
-  update.binaryVersions = (NSString *)binaryVersions;
+  update.runtimeVersion = (NSString *)runtimeVersion;
   if (metadata) {
     update.metadata = (NSDictionary *)metadata;
   }
@@ -141,16 +141,16 @@ binaryVersions:(NSString *)binaryVersions
   id assets = managedManifest[@"bundledAssets"];
 
   id sdkVersion = managedManifest[@"sdkVersion"];
-  id binaryVersions = managedManifest[@"binaryVersions"];
-  if (binaryVersions && [binaryVersions isKindOfClass:[NSDictionary class]]) {
-    id binaryVersionsIos = ((NSDictionary *)binaryVersions)[@"ios"];
-    NSAssert([binaryVersionsIos isKindOfClass:[NSString class]], @"binaryVersions['ios'] should be a string");
-    update.binaryVersions = (NSString *)binaryVersionsIos;
-  } else if (binaryVersions && [binaryVersions isKindOfClass:[NSString class]]) {
-    update.binaryVersions = (NSString *)binaryVersions;
+  id runtimeVersion = managedManifest[@"runtimeVersion"];
+  if (runtimeVersion && [runtimeVersion isKindOfClass:[NSDictionary class]]) {
+    id runtimeVersionIos = ((NSDictionary *)runtimeVersion)[@"ios"];
+    NSAssert([runtimeVersionIos isKindOfClass:[NSString class]], @"runtimeVersion['ios'] should be a string");
+    update.runtimeVersion = (NSString *)runtimeVersionIos;
+  } else if (runtimeVersion && [runtimeVersion isKindOfClass:[NSString class]]) {
+    update.runtimeVersion = (NSString *)runtimeVersion;
   } else {
     NSAssert([sdkVersion isKindOfClass:[NSString class]], @"sdkVersion should be a string");
-    update.binaryVersions = (NSString *)sdkVersion;
+    update.runtimeVersion = (NSString *)sdkVersion;
   }
 
   NSAssert([updateId isKindOfClass:[NSString class]], @"update ID should be a string");

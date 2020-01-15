@@ -16,7 +16,7 @@ typedef NS_ENUM(NSInteger, EXUpdatesUpdateStatus) {
 
 @property (nonatomic, strong, readonly) NSUUID *updateId;
 @property (nonatomic, strong, readonly) NSDate *commitTime;
-@property (nonatomic, strong, readonly) NSString *binaryVersions;
+@property (nonatomic, strong, readonly) NSString *runtimeVersion;
 @property (nonatomic, strong, readonly) NSDictionary * _Nullable metadata;
 @property (nonatomic, assign, readonly) EXUpdatesUpdateStatus status;
 @property (nonatomic, assign, readonly) BOOL keep;
@@ -26,7 +26,7 @@ typedef NS_ENUM(NSInteger, EXUpdatesUpdateStatus) {
 
 + (instancetype)updateWithId:(NSUUID *)updateId
                   commitTime:(NSDate *)commitTime
-              binaryVersions:(NSString *)binaryVersions
+              runtimeVersion:(NSString *)runtimeVersion
                     metadata:(NSDictionary * _Nullable)metadata
                       status:(EXUpdatesUpdateStatus)status
                         keep:(BOOL)keep;
