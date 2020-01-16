@@ -386,10 +386,11 @@ static NSString * const kEXUpdatesDatabaseFilename = @"updates.db";
       NSLog(@"returned multiple updates with the same ID in launchAssetUrlWithUpdateId");
     }
     NSDictionary *row = rows[0];
+    id metadata = row[@"metadata"];
     NSURL *url = [NSURL URLWithString:row[@"url"]];
     EXUpdatesAsset *asset = [[EXUpdatesAsset alloc] initWithUrl:url type:row[@"type"]];
     asset.filename = row[@"relative_path"];
-    asset.metadata = row[@"metadata"];
+    asset.metadata = [NSNull null] ? nil : metadata;
     asset.isLaunchAsset = YES;
     return asset;
   }
@@ -411,11 +412,15 @@ static NSString * const kEXUpdatesDatabaseFilename = @"updates.db";
   NSMutableArray<EXUpdatesAsset *>*assets = [NSMutableArray arrayWithCapacity:rows.count];
 
   for (NSDictionary *row in rows) {
+    id launchAssetId = row[@"launch_asset_id"];
+    id metadata = row[@"metadata"];
     NSURL *url = [NSURL URLWithString:row[@"url"]];
     EXUpdatesAsset *asset = [[EXUpdatesAsset alloc] initWithUrl:url type:row[@"type"]];
     asset.filename = row[@"relative_path"];
-    asset.metadata = row[@"metadata"];
-    asset.isLaunchAsset = [(NSNumber *)row[@"launch_asset_id"] isEqualToNumber:(NSNumber *)row[@"asset_id"]];
+    asset.metadata = metadata == [NSNull null] ? nil : metadata;
+    asset.isLaunchAsset = (launchAssetId && [launchAssetId isKindOfClass:[NSNumber class]])
+      ? [(NSNumber *)launchAssetId isEqualToNumber:(NSNumber *)row[@"asset_id"]]
+      : NO;
     [assets addObject:asset];
   }
 
@@ -564,8 +569,12 @@ static NSString * const kEXUpdatesDatabaseFilename = @"updates.db";
 - (EXUpdatesUpdate *)_updateWithRow:(NSDictionary *)row
 {
   NSError *error;
-  id metadata = [NSJSONSerialization JSONObjectWithData:[(NSString *)row[@"metadata"] dataUsingEncoding:NSUTF8StringEncoding] options:kNilOptions error:&error];
-  NSAssert(!error && metadata && [metadata isKindOfClass:[NSDictionary class]], @"Update metadata should be a valid JSON object");
+  id metadata = nil;
+  id rowMetadata = row[@"metadata"];
+  if ([rowMetadata isKindOfClass:[NSString class]]) {
+    metadata = [NSJSONSerialization JSONObjectWithData:[(NSString *)row[@"metadata"] dataUsingEncoding:NSUTF8StringEncoding] options:kNilOptions error:&error];
+    NSAssert(!error && metadata && [metadata isKindOfClass:[NSDictionary class]], @"Update metadata should be a valid JSON object");
+  }
   EXUpdatesUpdate *update = [EXUpdatesUpdate updateWithId:row[@"id"]
                                                commitTime:[NSDate dateWithTimeIntervalSince1970:[(NSNumber *)row[@"commit_time"] doubleValue] / 1000]
                                            runtimeVersion:row[@"runtime_version"]
