@@ -77,7 +77,7 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
   }
 
   if (_assetsToDownload == 0) {
-    _completion(YES);
+    _completion(_launchAssetUrl != nil);
     _completion = nil;
   }
   [_lock unlock];

@@ -194,6 +194,10 @@ static NSString * const kEXUpdatesAppControllerErrorDomain = @"EXUpdatesAppContr
     return;
   }
 
+  // TODO: remove this assertion and replace it with
+  // [self _emergencyLaunchWithError:];
+  NSAssert(self.launchAssetUrl != nil, @"_maybeFinish should only be called when we have a valid launchAssetUrl");
+
   _hasLaunched = YES;
   if (self->_delegate) {
     [self->_delegate appController:self didStartWithSuccess:YES];
@@ -281,7 +285,7 @@ static NSString * const kEXUpdatesAppControllerErrorDomain = @"EXUpdatesAppContr
   [launcher launchUpdateWithFatalError:error];
 
   if (self->_delegate) {
-    [self->_delegate appController:self didStartWithSuccess:YES];
+    [self->_delegate appController:self didStartWithSuccess:self.launchAssetUrl != nil];
   }
 }
 
