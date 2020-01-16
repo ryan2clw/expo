@@ -81,9 +81,9 @@ static NSString * const kEXUpdatesAppLoaderErrorDomain = @"EXUpdatesAppLoader";
     [_delegate appLoader:self didFinishLoadingUpdate:updateManifest];
   } else {
     if (existingUpdate) {
-      // we've already partially downloaded the update, so we should use the existing entity.
+      // we've already partially downloaded the update.
       // however, it's not ready, so we should try to download all the assets again.
-      _updateManifest = existingUpdate;
+      _updateManifest = updateManifest;
     } else {
       if (existingUpdateError) {
         NSLog(@"Failed to select old update from DB: %@", existingUpdateError.localizedDescription);
