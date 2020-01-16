@@ -57,7 +57,7 @@ static NSString * const kEXUpdatesDatabaseFilename = @"updates.db";
         NSString *description = [NSString stringWithFormat:@"Could not move existing corrupt database: %@", [err localizedDescription]];
         if (error != nil) {
           *error = [NSError errorWithDomain:kEXUpdatesDatabaseErrorDomain
-                                       code:-1
+                                       code:1004
                                    userInfo:@{ NSLocalizedDescriptionKey: description, NSUnderlyingErrorKey: err }];
         }
         return NO;

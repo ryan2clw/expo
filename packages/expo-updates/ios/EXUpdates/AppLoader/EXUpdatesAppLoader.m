@@ -198,10 +198,8 @@ static NSString * const kEXUpdatesAppLoaderErrorDomain = @"EXUpdatesAppLoader";
   if (_delegate) {
     if ([_erroredAssets count]) {
       [_delegate appLoader:self didFailWithError:[NSError errorWithDomain:kEXUpdatesAppLoaderErrorDomain
-                                                                     code:-1
-                                                                 userInfo:@{
-                                                                            NSLocalizedDescriptionKey: @"Failed to download all assets"
-                                                                            }]];
+                                                                     code:1012
+                                                                 userInfo:@{NSLocalizedDescriptionKey: @"Failed to load all assets"}]];
     } else {
       [_delegate appLoader:self didFinishLoadingUpdate:_updateManifest];
     }

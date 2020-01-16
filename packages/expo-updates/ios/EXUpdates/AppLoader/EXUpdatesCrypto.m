@@ -32,7 +32,7 @@ static NSString * const kEXPublicKeyFilename = @"manifestPublicKey.pem";
                              errorBlock:(EXUpdatesVerifySignatureErrorBlock)errorBlock
 {
   if (!data || !signature) {
-    errorBlock([NSError errorWithDomain:@"EXUpdatesCrypto" code:-1 userInfo:@{ NSLocalizedDescriptionKey: @"Cannot verify the manifest because it is empty or has no signature." }]);
+    errorBlock([NSError errorWithDomain:@"EXUpdatesCrypto" code:1001 userInfo:@{ NSLocalizedDescriptionKey: @"Cannot verify the manifest because it is empty or has no signature." }]);
     return;
   }
 

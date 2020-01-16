@@ -22,6 +22,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) int assetsToDownload;
 @property (nonatomic, assign) int assetsToDownloadFinished;
 
+@property (nonatomic, strong) NSError *launchAssetError;
+
 @end
 
 static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
@@ -57,6 +59,12 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
   _completion = completion;
   if (!_launchedUpdate) {
     _launchedUpdate = [[self class] launchableUpdateWithSelectionPolicy:selectionPolicy];
+
+    if (!_launchedUpdate) {
+      _completion([NSError errorWithDomain:kEXUpdatesAppLauncherErrorDomain code:1011 userInfo:@{NSLocalizedDescriptionKey: @"No launchable updates found in database"}], NO);
+      _completion = nil;
+      return;
+    }
   }
   
   _assetFilesMap = [NSMutableDictionary new];
@@ -77,7 +85,7 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
   }
 
   if (_assetsToDownload == 0) {
-    _completion(_launchAssetUrl != nil);
+    _completion(nil, _launchAssetUrl != nil);
     _completion = nil;
   }
   [_lock unlock];
@@ -124,6 +132,11 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
       asset.downloadTime = [NSDate date];
       [self _assetDownloadDidFinish:asset withLocalUrl:assetLocalUrl];
     } errorBlock:^(NSError * _Nonnull error, NSURLResponse * _Nonnull response) {
+      if (asset.isLaunchAsset) {
+        // save the error -- since this is the launch asset, the launcher will fail
+        // so we want to propagate this error
+        self->_launchAssetError = error;
+      }
       [self _assetDownloadDidError:error];
     }];
   }
@@ -159,7 +172,7 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
   }
 
   if (_assetsToDownloadFinished == _assetsToDownload) {
-    _completion(_launchAssetUrl != nil);
+    _completion(_launchAssetError, _launchAssetUrl != nil);
     _completion = nil;
   }
   [_lock unlock];
@@ -167,14 +180,14 @@ static NSString * const kEXUpdatesAppLauncherErrorDomain = @"AppLauncher";
 
 - (void)_assetDownloadDidError:(NSError *)error
 {
+  NSLog(@"Failed to load missing asset: %@", error.localizedDescription);
   [_lock lock];
   _assetsToDownloadFinished++;
   if (_assetsToDownloadFinished == _assetsToDownload) {
-    _completion(_launchAssetUrl != nil);
+    _completion(_launchAssetError, _launchAssetUrl != nil);
     _completion = nil;
   }
   [_lock unlock];
-  NSLog(@"Failed to load missing asset: %@", error.localizedDescription);
 }
 
 @end

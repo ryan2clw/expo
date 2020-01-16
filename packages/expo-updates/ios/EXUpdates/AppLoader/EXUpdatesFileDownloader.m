@@ -53,7 +53,7 @@ NSTimeInterval const kEXUpdatesDefaultTimeoutInterval = 60;
       successBlock(data, response);
     } else {
       errorBlock([NSError errorWithDomain:kEXUpdatesFileDownloaderErrorDomain
-                                     code:-1
+                                     code:1002
                                  userInfo:@{
                                    NSLocalizedDescriptionKey: [NSString stringWithFormat:@"Could not write to path %@: %@", destinationPath, error.localizedDescription],
                                    NSUnderlyingErrorKey: error
@@ -91,7 +91,7 @@ NSTimeInterval const kEXUpdatesDefaultTimeoutInterval = 60;
                                                     EXUpdatesUpdate *update = [EXUpdatesUpdate updateWithManagedManifest:(NSDictionary *)innerManifest];
                                                     successBlock(update);
                                                   } else {
-                                                    NSError *error = [NSError errorWithDomain:kEXUpdatesFileDownloaderErrorDomain code:-1 userInfo:@{NSLocalizedDescriptionKey: @"Manifest verification failed"}];
+                                                    NSError *error = [NSError errorWithDomain:kEXUpdatesFileDownloaderErrorDomain code:1003 userInfo:@{NSLocalizedDescriptionKey: @"Manifest verification failed"}];
                                                     errorBlock(error, response);
                                                   }
                                                 }
