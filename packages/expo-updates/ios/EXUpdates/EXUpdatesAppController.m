@@ -142,7 +142,7 @@ static NSString * const kEXUpdatesAppControllerErrorDomain = @"EXUpdatesAppContr
   [self start];
 }
 
-- (BOOL)requestRelaunch
+- (void)requestRelaunchWithCompletion:(EXUpdatesAppControllerRelaunchCompletionBlock)completion
 {
   if (_bridge) {
     [_database.lock lock];
@@ -153,17 +153,18 @@ static NSString * const kEXUpdatesAppControllerErrorDomain = @"EXUpdatesAppContr
         dispatch_async(dispatch_get_main_queue(), ^{
           self->_launcher = self->_candidateLauncher;
           [self->_database.lock unlock];
+          completion(YES);
           [self->_bridge reload];
           [self _runReaperInBackground];
         });
       } else {
         NSLog(@"Failed to relaunch: %@", error.localizedDescription);
+        completion(NO);
       }
     }];
-    return true;
   } else {
     NSLog(@"EXUpdatesAppController: Failed to reload because bridge was nil. Did you set the bridge property on the controller singleton?");
-    return false;
+    completion(NO);
   }
 }
 

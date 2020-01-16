@@ -8,6 +8,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+typedef void (^EXUpdatesAppControllerRelaunchCompletionBlock)(BOOL success);
+
 @class EXUpdatesAppController;
 
 @protocol EXUpdatesAppControllerDelegate <NSObject>
@@ -78,7 +80,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)startAndShowLaunchScreen:(UIWindow *)window;
 
-- (BOOL)requestRelaunch;
+- (void)requestRelaunchWithCompletion:(EXUpdatesAppControllerRelaunchCompletionBlock)completion;
 
 @end
 

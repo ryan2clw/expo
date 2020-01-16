@@ -46,12 +46,13 @@ UM_EXPORT_METHOD_AS(reload,
                     reloadAsync:(UMPromiseResolveBlock)resolve
                          reject:(UMPromiseRejectBlock)reject)
 {
-  BOOL success = [[EXUpdatesAppController sharedInstance] requestRelaunch];
-  if (success) {
-    resolve(nil);
-  } else {
-    reject(@"ERR_UPDATES_RELOAD", @"Could not reload application. Ensure you have set the `bridge` property of EXUpdatesAppController.", nil);
-  }
+  [[EXUpdatesAppController sharedInstance] requestRelaunchWithCompletion:^(BOOL success) {
+    if (success) {
+      resolve(nil);
+    } else {
+      reject(@"ERR_UPDATES_RELOAD", @"Could not reload application. Ensure you have set the `bridge` property of EXUpdatesAppController.", nil);
+    }
+  }];
 }
 
 UM_EXPORT_METHOD_AS(checkForUpdateAsync,
